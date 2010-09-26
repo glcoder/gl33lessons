@@ -5,12 +5,12 @@
 #include "OpenGL.h"
 #include "GLWindow.h"
 
-void render(GLWindow *window)
+void render(GLWindow *)
 {
 	OPENGL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
 
-int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hprevinstance, LPSTR cmdline, int cmdshow)
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	GLWindow window;
 	int      result;

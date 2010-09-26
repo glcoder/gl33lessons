@@ -4,14 +4,16 @@ GLWindow::GLWindow(): m_hInstance(NULL), m_hWnd(NULL), m_hDC(NULL), m_hRC(NULL),
 	m_width(0), m_height(0), m_fullScreen(false), m_active(false), m_running(false),
 	m_renderProc(NULL)
 {
-	memset(&m_devMode, 0, sizeof(m_devMode));
 }
 
 GLWindow::~GLWindow()
 {
 	// восстановим разрешение экрана
 	if (m_fullScreen)
-		ChangeDisplaySettings(&m_devMode, 0);
+	{
+		ChangeDisplaySettings(NULL, CDS_RESET);
+		ShowCursor(TRUE);
+	}
 
 	// удаляем контекст рендеринга
 	if (m_hRC)
@@ -59,10 +61,6 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		0
 	};
 
-	// запомним текущие параметры экрана
-	m_devMode.dmSize = sizeof(m_devMode);
-	EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &m_devMode);
-
 	m_hInstance = static_cast<HINSTANCE>(GetModuleHandle(NULL));
 
 	// регистрация класса окна
@@ -71,13 +69,9 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 	wcx.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wcx.lpfnWndProc   = reinterpret_cast<WNDPROC>(GLWindow::sWindowProc);
 	wcx.hInstance     = m_hInstance;
-	wcx.hbrBackground = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
 	wcx.lpszClassName = GLWINDOW_CLASS_NAME;
 	wcx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
 	wcx.hCursor       = LoadCursor(NULL, IDC_ARROW);
-
-	// wcx.hIcon   = static_cast<HICON>(LoadImage(NULL, OIC_APPLICATION, IMAGE_ICON, 0, 0, LR_SHARED));
-	// wcx.hCursor = static_cast<HCURSOR>(LoadImage(NULL, OCR_ARROW, IMAGE_CURSOR, 0, 0, LR_SHARED));
 
 	if (!RegisterClassEx(&wcx))
 	{
@@ -114,6 +108,12 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 	// получим дескриптор контекста окна
 	m_hDC = GetDC(m_hWnd);
 
+	if (!m_hDC)
+	{
+		LOG_ERROR("GetDC fail (%d)\n", GetLastError());
+		return false;
+	}
+
 	// описание формата пикселей
 	memset(&pfd, 0, sizeof(pfd));
 	pfd.nSize      = sizeof(pfd);
@@ -144,7 +144,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
 		wglGetProcAddress("wglCreateContextAttribsARB"));
 
-	if (wglCreateContextAttribsARB == NULL)
+	if (!wglCreateContextAttribsARB)
 	{
 		LOG_ERROR("wglCreateContextAttribsARB fail (%d)\n", GetLastError());
 		wglDeleteContext(hRCTemp);
@@ -202,18 +202,24 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 	LONG    result;
 	int     x, y;
 
+	// если мы возвращаемся из полноэкранного режима
+	if (m_fullScreen && !fullScreen)
+	{
+		ChangeDisplaySettings(NULL, CDS_RESET);
+		ShowCursor(TRUE);
+	}
+
 	m_fullScreen = fullScreen;
 
 	// если необходим полноэкранный режим
 	if (m_fullScreen)
 	{
 		memset(&devMode, 0, sizeof(devMode));
-		devMode.dmSize             = sizeof(devMode);
-		devMode.dmPelsWidth        = width;
-		devMode.dmPelsHeight       = height;
-		devMode.dmBitsPerPel       = m_devMode.dmBitsPerPel;
-		devMode.dmDisplayFrequency = m_devMode.dmDisplayFrequency;
-		devMode.dmFields           = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+		devMode.dmSize       = sizeof(devMode);
+		devMode.dmPelsWidth  = width;
+		devMode.dmPelsHeight = height;
+		devMode.dmBitsPerPel = GetDeviceCaps(m_hDC, BITSPIXEL);
+		devMode.dmFields     = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
 
 		// попытка установить полноэкранный режим
 		result = ChangeDisplaySettings(&devMode, CDS_FULLSCREEN);
@@ -227,6 +233,8 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 	// если был запрошен полноэкранный режим и его удалось установить
 	if (m_fullScreen)
 	{
+		ShowCursor(FALSE);
+
 		style   = WS_POPUP;
 		exStyle = WS_EX_APPWINDOW | WS_EX_TOPMOST;
 
@@ -246,7 +254,7 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 	rect.top    = y;
 	rect.bottom = y + height;
 
-	// выровняем размер окна
+	// подгоним размер окна под стили
 	AdjustWindowRectEx (&rect, style, FALSE, exStyle);
 
 	// установим стили окна
@@ -260,6 +268,8 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 
 	// покажем окно на экране
 	ShowWindow(m_hWnd, SW_SHOW);
+	SetForegroundWindow(m_hWnd);
+	SetFocus(m_hWnd);
 	UpdateWindow(m_hWnd);
 
 	// получим размеры окна
@@ -321,9 +331,21 @@ LRESULT CALLBACK GLWindow::windowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 {
 	switch (msg)
 	{
+		case WM_KEYDOWN:
+			if (wParam == VK_ESCAPE)
+				m_running = false;
+
+			if (wParam == VK_F1)
+				setSize(m_width, m_height, !m_fullScreen);
+		break;
+
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
-			m_active = (msg == WM_SETFOCUS ? true : false);
+			m_active = (msg == WM_SETFOCUS);
+		break;
+
+		case WM_ACTIVATE:
+			m_active = (!HIWORD(wParam));
 		break;
 
 		case WM_CLOSE:

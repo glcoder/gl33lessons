@@ -38,7 +38,6 @@ private:
 	// заглушка для вызова windowProc
 	static LRESULT CALLBACK sWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-	DEVMODE   m_devMode;
 	HINSTANCE m_hInstance;
 	HWND      m_hWnd;
 	HDC       m_hDC;
