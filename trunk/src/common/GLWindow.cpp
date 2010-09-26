@@ -8,29 +8,29 @@ GLWindow::GLWindow(): m_hInstance(NULL), m_hWnd(NULL), m_hDC(NULL), m_hRC(NULL),
 
 GLWindow::~GLWindow()
 {
-	// восстановим разрешение экрана
+	// РІРѕСЃСЃС‚Р°РЅРѕРІРёРј СЂР°Р·СЂРµС€РµРЅРёРµ СЌРєСЂР°РЅР°
 	if (m_fullScreen)
 	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
 		ShowCursor(TRUE);
 	}
 
-	// удаляем контекст рендеринга
+	// СѓРґР°Р»СЏРµРј РєРѕРЅС‚РµРєСЃС‚ СЂРµРЅРґРµСЂРёРЅРіР°
 	if (m_hRC)
 	{
 		wglMakeCurrent(NULL, NULL);
 		wglDeleteContext(m_hRC);
 	}
 
-	// освобождаем контекст окна
+	// РѕСЃРІРѕР±РѕР¶РґР°РµРј РєРѕРЅС‚РµРєСЃС‚ РѕРєРЅР°
 	if (m_hDC)
 		ReleaseDC(m_hWnd, m_hDC);
 
-	// удаляем окно
+	// СѓРґР°Р»СЏРµРј РѕРєРЅРѕ
 	if (m_hWnd)
 		DestroyWindow(m_hWnd);
 
-	// удаляем класс окна
+	// СѓРґР°Р»СЏРµРј РєР»Р°СЃСЃ РѕРєРЅР°
 	if (m_hInstance)
 		UnregisterClass(GLWINDOW_CLASS_NAME, m_hInstance);
 }
@@ -48,10 +48,10 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 	DWORD                 style, exStyle;
 	int                   x, y, format;
 
-	// определим указатель на функцию создания расширенного контекста OpenGL
+	// РѕРїСЂРµРґРµР»РёРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° С„СѓРЅРєС†РёСЋ СЃРѕР·РґР°РЅРёСЏ СЂР°СЃС€РёСЂРµРЅРЅРѕРіРѕ РєРѕРЅС‚РµРєСЃС‚Р° OpenGL
 	PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
 
-	// укажем атрибуты для создания расширенного контекста OpenGL
+	// СѓРєР°Р¶РµРј Р°С‚СЂРёР±СѓС‚С‹ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ СЂР°СЃС€РёСЂРµРЅРЅРѕРіРѕ РєРѕРЅС‚РµРєСЃС‚Р° OpenGL
 	int attribs[] =
 	{
 		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
@@ -63,7 +63,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 
 	m_hInstance = static_cast<HINSTANCE>(GetModuleHandle(NULL));
 
-	// регистрация класса окна
+	// СЂРµРіРёСЃС‚СЂР°С†РёСЏ РєР»Р°СЃСЃР° РѕРєРЅР°
 	memset(&wcx, 0, sizeof(wcx));
 	wcx.cbSize        = sizeof(wcx);
 	wcx.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -79,11 +79,11 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// стили окна
+	// СЃС‚РёР»Рё РѕРєРЅР°
 	style   = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 	exStyle = WS_EX_APPWINDOW;
 
-	// выровняем окно по центру экрана
+	// РІС‹СЂРѕРІРЅСЏРµРј РѕРєРЅРѕ РїРѕ С†РµРЅС‚СЂСѓ СЌРєСЂР°РЅР°
 	x = (GetSystemMetrics(SM_CXSCREEN) - width)  / 2;
 	y = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
 
@@ -92,10 +92,10 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 	rect.top    = y;
 	rect.bottom = y + height;
 
-	// подгоним размер окна под стили
+	// РїРѕРґРіРѕРЅРёРј СЂР°Р·РјРµСЂ РѕРєРЅР° РїРѕРґ СЃС‚РёР»Рё
 	AdjustWindowRectEx (&rect, style, FALSE, exStyle);
 
-	// создаем окно
+	// СЃРѕР·РґР°РµРј РѕРєРЅРѕ
 	m_hWnd = CreateWindowEx(exStyle, GLWINDOW_CLASS_NAME, title, style, rect.left, rect.top,
 		rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, m_hInstance, NULL);
 
@@ -105,7 +105,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// получим дескриптор контекста окна
+	// РїРѕР»СѓС‡РёРј РґРµСЃРєСЂРёРїС‚РѕСЂ РєРѕРЅС‚РµРєСЃС‚Р° РѕРєРЅР°
 	m_hDC = GetDC(m_hWnd);
 
 	if (!m_hDC)
@@ -114,7 +114,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// описание формата пикселей
+	// РѕРїРёСЃР°РЅРёРµ С„РѕСЂРјР°С‚Р° РїРёРєСЃРµР»РµР№
 	memset(&pfd, 0, sizeof(pfd));
 	pfd.nSize      = sizeof(pfd);
 	pfd.nVersion   = 1;
@@ -123,7 +123,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 	pfd.cColorBits = 32;
 	pfd.cDepthBits = 24;
 
-	// запросим формат пикселей, ближайший к описанному выше
+	// Р·Р°РїСЂРѕСЃРёРј С„РѕСЂРјР°С‚ РїРёРєСЃРµР»РµР№, Р±Р»РёР¶Р°Р№С€РёР№ Рє РѕРїРёСЃР°РЅРЅРѕРјСѓ РІС‹С€Рµ
 	format = ChoosePixelFormat(m_hDC, &pfd);
 	if (!format || !SetPixelFormat(m_hDC, format, &pfd))
 	{
@@ -131,16 +131,16 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// создадим временный контекст рендеринга
-	// он нужен для получения функции wglCreateContextAttribsARB
+	// СЃРѕР·РґР°РґРёРј РІСЂРµРјРµРЅРЅС‹Р№ РєРѕРЅС‚РµРєСЃС‚ СЂРµРЅРґРµСЂРёРЅРіР°
+	// РѕРЅ РЅСѓР¶РµРЅ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ С„СѓРЅРєС†РёРё wglCreateContextAttribsARB
 	hRCTemp = wglCreateContext(m_hDC);
 	if (!hRCTemp || !wglMakeCurrent(m_hDC, hRCTemp))
 	{
-		LOG_ERROR("Сreating temp render context fail (%d)\n", GetLastError());
+		LOG_ERROR("РЎreating temp render context fail (%d)\n", GetLastError());
 		return false;
 	}
 
-	// получим адрес функции установки атрибутов контекста рендеринга
+	// РїРѕР»СѓС‡РёРј Р°РґСЂРµСЃ С„СѓРЅРєС†РёРё СѓСЃС‚Р°РЅРѕРІРєРё Р°С‚СЂРёР±СѓС‚РѕРІ РєРѕРЅС‚РµРєСЃС‚Р° СЂРµРЅРґРµСЂРёРЅРіР°
 	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
 		wglGetProcAddress("wglCreateContextAttribsARB"));
 
@@ -151,7 +151,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// создадим контекст рендеринга для OpenGL 3.x
+	// СЃРѕР·РґР°РґРёРј РєРѕРЅС‚РµРєСЃС‚ СЂРµРЅРґРµСЂРёРЅРіР° РґР»СЏ OpenGL 3.x
 	m_hRC = wglCreateContextAttribsARB(m_hDC, 0, attribs);
 	if (!m_hRC || !wglMakeCurrent(m_hDC, m_hRC))
 	{
@@ -160,7 +160,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// выведем в лог немного информации о контексте рендеринга
+	// РІС‹РІРµРґРµРј РІ Р»РѕРі РЅРµРјРЅРѕРіРѕ РёРЅС„РѕСЂРјР°С†РёРё Рѕ РєРѕРЅС‚РµРєСЃС‚Рµ СЂРµРЅРґРµСЂРёРЅРіР°
 	int major, minor;
 	glGetIntegerv(GL_MAJOR_VERSION, &major);
 	glGetIntegerv(GL_MINOR_VERSION, &minor);
@@ -177,10 +177,10 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 		major, minor
 	);
 
-	// больше нам временный контекст рендеринга не нужен
+	// Р±РѕР»СЊС€Рµ РЅР°Рј РІСЂРµРјРµРЅРЅС‹Р№ РєРѕРЅС‚РµРєСЃС‚ СЂРµРЅРґРµСЂРёРЅРіР° РЅРµ РЅСѓР¶РµРЅ
 	wglDeleteContext(hRCTemp);
 
-	// запишем указатель на себя в дескриптор окна для корректной работы windowProc
+	// Р·Р°РїРёС€РµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° СЃРµР±СЏ РІ РґРµСЃРєСЂРёРїС‚РѕСЂ РѕРєРЅР° РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕР№ СЂР°Р±РѕС‚С‹ windowProc
 	SetProp(m_hWnd, GLWINDOW_PROP_NAME, reinterpret_cast<HANDLE>(this));
 	// SetWindowLongPtr(m_hWnd, GWL_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
@@ -202,7 +202,7 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 	LONG    result;
 	int     x, y;
 
-	// если мы возвращаемся из полноэкранного режима
+	// РµСЃР»Рё РјС‹ РІРѕР·РІСЂР°С‰Р°РµРјСЃСЏ РёР· РїРѕР»РЅРѕСЌРєСЂР°РЅРЅРѕРіРѕ СЂРµР¶РёРјР°
 	if (m_fullScreen && !fullScreen)
 	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
@@ -211,7 +211,7 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 
 	m_fullScreen = fullScreen;
 
-	// если необходим полноэкранный режим
+	// РµСЃР»Рё РЅРµРѕР±С…РѕРґРёРј РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ СЂРµР¶РёРј
 	if (m_fullScreen)
 	{
 		memset(&devMode, 0, sizeof(devMode));
@@ -221,7 +221,7 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 		devMode.dmBitsPerPel = GetDeviceCaps(m_hDC, BITSPIXEL);
 		devMode.dmFields     = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
 
-		// попытка установить полноэкранный режим
+		// РїРѕРїС‹С‚РєР° СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ СЂРµР¶РёРј
 		result = ChangeDisplaySettings(&devMode, CDS_FULLSCREEN);
 		if (result != DISP_CHANGE_SUCCESSFUL)
 		{
@@ -230,7 +230,7 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 		}
 	}
 
-	// если был запрошен полноэкранный режим и его удалось установить
+	// РµСЃР»Рё Р±С‹Р» Р·Р°РїСЂРѕС€РµРЅ РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ СЂРµР¶РёРј Рё РµРіРѕ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ
 	if (m_fullScreen)
 	{
 		ShowCursor(FALSE);
@@ -239,12 +239,12 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 		exStyle = WS_EX_APPWINDOW | WS_EX_TOPMOST;
 
 		x = y = 0;
-	} else // если полноэкранный режим не нужен, или его не удалось установить
+	} else // РµСЃР»Рё РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ СЂРµР¶РёРј РЅРµ РЅСѓР¶РµРЅ, РёР»Рё РµРіРѕ РЅРµ СѓРґР°Р»РѕСЃСЊ СѓСЃС‚Р°РЅРѕРІРёС‚СЊ
 	{
 		style   = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 		exStyle = WS_EX_APPWINDOW;
 
-		// выровняем окно по центру экрана
+		// РІС‹СЂРѕРІРЅСЏРµРј РѕРєРЅРѕ РїРѕ С†РµРЅС‚СЂСѓ СЌРєСЂР°РЅР°
 		x = (GetSystemMetrics(SM_CXSCREEN) - width)  / 2;
 		y = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
 	}
@@ -254,33 +254,33 @@ void GLWindow::setSize(int width, int height, bool fullScreen)
 	rect.top    = y;
 	rect.bottom = y + height;
 
-	// подгоним размер окна под стили
+	// РїРѕРґРіРѕРЅРёРј СЂР°Р·РјРµСЂ РѕРєРЅР° РїРѕРґ СЃС‚РёР»Рё
 	AdjustWindowRectEx (&rect, style, FALSE, exStyle);
 
-	// установим стили окна
+	// СѓСЃС‚Р°РЅРѕРІРёРј СЃС‚РёР»Рё РѕРєРЅР°
 	SetWindowLong(m_hWnd, GWL_STYLE,   style);
 	SetWindowLong(m_hWnd, GWL_EXSTYLE, exStyle);
 
-	// обновим позицию окна
+	// РѕР±РЅРѕРІРёРј РїРѕР·РёС†РёСЋ РѕРєРЅР°
 	SetWindowPos(m_hWnd, HWND_TOP, rect.left, rect.top,
 		rect.right - rect.left, rect.bottom - rect.top,
 		SWP_FRAMECHANGED);
 
-	// покажем окно на экране
+	// РїРѕРєР°Р¶РµРј РѕРєРЅРѕ РЅР° СЌРєСЂР°РЅРµ
 	ShowWindow(m_hWnd, SW_SHOW);
 	SetForegroundWindow(m_hWnd);
 	SetFocus(m_hWnd);
 	UpdateWindow(m_hWnd);
 
-	// получим размеры окна
+	// РїРѕР»СѓС‡РёРј СЂР°Р·РјРµСЂС‹ РѕРєРЅР°
 	GetClientRect(m_hWnd, &rect);
 	m_width  = rect.right - rect.left;
 	m_height = rect.bottom - rect.top;
 
-	// устанавливаем вьюпорт на все окно
+	// СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РІСЊСЋРїРѕСЂС‚ РЅР° РІСЃРµ РѕРєРЅРѕ
 	OPENGL_CALL(glViewport(0, 0, m_width, m_height));
 
-	// центрируем курсор относительно окна
+	// С†РµРЅС‚СЂРёСЂСѓРµРј РєСѓСЂСЃРѕСЂ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕРєРЅР°
 	SetCursorPos(x + m_width / 2, y + m_height / 2);
 
 	OPENGL_CHECK_FOR_ERRORS();
@@ -295,11 +295,11 @@ int GLWindow::mainLoop()
 {
 	MSG msg;
 
-	// основной цикл окна
+	// РѕСЃРЅРѕРІРЅРѕР№ С†РёРєР» РѕРєРЅР°
 	m_running = m_active = true;
 	while (m_running)
 	{
-		// обработаем сообщения из очереди сообщений
+		// РѕР±СЂР°Р±РѕС‚Р°РµРј СЃРѕРѕР±С‰РµРЅРёСЏ РёР· РѕС‡РµСЂРµРґРё СЃРѕРѕР±С‰РµРЅРёР№
 		while (PeekMessage(&msg, m_hWnd, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
@@ -311,7 +311,7 @@ int GLWindow::mainLoop()
 			DispatchMessage(&msg);
 		}
 
-		// если окно в рабочем режиме и активно
+		// РµСЃР»Рё РѕРєРЅРѕ РІ СЂР°Р±РѕС‡РµРј СЂРµР¶РёРјРµ Рё Р°РєС‚РёРІРЅРѕ
 		if (m_running && m_active)
 		{
 			if (m_renderProc)

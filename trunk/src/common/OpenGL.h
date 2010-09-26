@@ -10,15 +10,15 @@
 
 #include "common.h"
 
-// глобальная перменная для хранения ошибки OpenGL
+// РіР»РѕР±Р°Р»СЊРЅР°СЏ РїРµСЂРјРµРЅРЅР°СЏ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РѕС€РёР±РєРё OpenGL
 extern GLenum g_OpenGLError;
 
-// проверка на ошибки OpenGL
+// РїСЂРѕРІРµСЂРєР° РЅР° РѕС€РёР±РєРё OpenGL
 #define OPENGL_CHECK_FOR_ERRORS() \
 	if ((g_OpenGLError = glGetError()) != GL_NO_ERROR) \
 		LOG_ERROR("OpenGL error %d\n", (int)g_OpenGLError);
 
-// безопасный вызов функции OpenGL
+// Р±РµР·РѕРїР°СЃРЅС‹Р№ РІС‹Р·РѕРІ С„СѓРЅРєС†РёРё OpenGL
 #define OPENGL_CALL(expression) \
 	{ \
 		expression; \
