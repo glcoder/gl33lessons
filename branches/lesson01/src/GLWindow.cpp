@@ -320,7 +320,7 @@ int GLWindow::mainLoop()
 			SwapBuffers(m_hDC);
 		}
 
-		//Sleep(2);
+		Sleep(2);
 	}
 
 	m_running = m_active = false;
