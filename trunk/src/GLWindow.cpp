@@ -97,7 +97,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 
 	// создаем окно
 	m_hWnd = CreateWindowEx(exStyle, GLWINDOW_CLASS_NAME, title, style, rect.left, rect.top,
-		rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, m_hInstance, NULL);
+		rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, m_hInstance, static_cast<LPVOID>(this));
 
 	if (!m_hWnd)
 	{
@@ -182,8 +182,8 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 
 	// запишем указатель на себя в дескриптор окна для корректной работы windowProc
 	SetProp(m_hWnd, GLWINDOW_PROP_NAME, reinterpret_cast<HANDLE>(this));
-	// SetWindowLongPtr(m_hWnd, GWL_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
+	// зададим размеры окна
 	setSize(width, height, fullScreen);
 
 	m_active = m_running = true;
@@ -320,14 +320,14 @@ int GLWindow::mainLoop()
 			SwapBuffers(m_hDC);
 		}
 
-		Sleep(2);
+		//Sleep(2);
 	}
 
 	m_running = m_active = false;
 	return 0;
 }
 
-LRESULT CALLBACK GLWindow::windowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK GLWindow::windowProc(UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
@@ -337,43 +337,47 @@ LRESULT CALLBACK GLWindow::windowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 
 			if (wParam == VK_F1)
 				setSize(m_width, m_height, !m_fullScreen);
-		break;
+
+			return FALSE;
 
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
 			m_active = (msg == WM_SETFOCUS);
-		break;
+			return FALSE;
 
 		case WM_ACTIVATE:
-			m_active = (!HIWORD(wParam));
-		break;
+			m_active = (LOWORD(wParam) == WA_INACTIVE);
+			return FALSE;
 
 		case WM_CLOSE:
-		case WM_DESTROY:
 			m_running = m_active = false;
 			PostQuitMessage(0);
-		break;
+			return FALSE;
 
 		case WM_SYSCOMMAND:
-			switch (wParam)
+			switch (wParam & 0xFFF0)
 			{
 				case SC_SCREENSAVE:
 				case SC_MONITORPOWER:
+					if (m_fullScreen)
+						return FALSE;
+					break;
+
+				case SC_KEYMENU:
 					return FALSE;
 			}
-		break;
+			break;
 
 		case WM_ERASEBKGND:
 			return FALSE;
 	}
 
-	return DefWindowProc(hWnd, msg, wParam, lParam);
+	return DefWindowProc(m_hWnd, msg, wParam, lParam);
 }
 
 LRESULT CALLBACK GLWindow::sWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	GLWindow *window = reinterpret_cast<GLWindow*>(GetProp(hWnd, GLWINDOW_PROP_NAME));
-	// GLWindow *window = reinterpret_cast<GLWindow*>(GetWindowLongPtr(hWnd, GWL_USERDATA));
 
-	return window ? window->windowProc(hWnd, msg, wParam, lParam) : DefWindowProc(hWnd, msg, wParam, lParam);
+	return window ? window->windowProc(msg, wParam, lParam) : DefWindowProc(hWnd, msg, wParam, lParam);
 }

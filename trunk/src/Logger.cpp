@@ -1,24 +1,29 @@
 #include "Logger.h"
 
-Logger *g_Logger = NULL;
+static char g_LoggerFileName[LOGGER_FILENAME_MAX] = "lesson.log";
 
-Logger::Logger(const char *fileName)
+void LoggerOpen(const char *fileName)
 {
 	FILE *output;
 
-	memset(m_fileName, 0, LOGGER_FILENAME_MAX);
-	strncpy(m_fileName, fileName, LOGGER_FILENAME_MAX - 1);
+	memset(g_LoggerFileName, 0, LOGGER_FILENAME_MAX);
+	strncpy(g_LoggerFileName, fileName, LOGGER_FILENAME_MAX - 1);
 
-	if ((output = fopen(m_fileName, "w")) != NULL)
+	if ((output = fopen(g_LoggerFileName, "w")) != NULL)
 		fclose(output);
 }
 
-void Logger::write(const char *format, ...) const
+void LoggerClose()
+{
+	//
+}
+
+void LoggerWrite(const char *format, ...)
 {
 	va_list ap;
 	FILE    *output;
 
-	if ((output = fopen(m_fileName, "a+")) == NULL)
+	if ((output = fopen(g_LoggerFileName, "a+")) == NULL)
 		return;
 
 	va_start(ap, format);
