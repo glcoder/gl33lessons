@@ -97,7 +97,7 @@ bool GLWindow::create(const char *title, int width, int height, bool fullScreen)
 
 	// создаем окно
 	m_hWnd = CreateWindowEx(exStyle, GLWINDOW_CLASS_NAME, title, style, rect.left, rect.top,
-		rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, m_hInstance, static_cast<LPVOID>(this));
+		rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, m_hInstance, NULL);
 
 	if (!m_hWnd)
 	{
