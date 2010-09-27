@@ -33,7 +33,7 @@ public:
 
 private:
 	// обработчик сообщений окна
-	LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	LRESULT CALLBACK windowProc(UINT msg, WPARAM wParam, LPARAM lParam);
 
 	// заглушка для вызова windowProc
 	static LRESULT CALLBACK sWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
