@@ -1,8 +1,9 @@
 #include "Logger.h"
 
-static char g_LoggerFileName[LOGGER_FILENAME_MAX] = "lesson.log";
+const int LOGGER_FILENAME_MAX              = 256;
+char g_LoggerFileName[LOGGER_FILENAME_MAX] = "lesson.log";
 
-void LoggerOpen(const char *fileName)
+void LoggerCreate(const char *fileName)
 {
 	FILE *output;
 
@@ -13,7 +14,7 @@ void LoggerOpen(const char *fileName)
 		fclose(output);
 }
 
-void LoggerClose()
+void LoggerDestroy()
 {
 	//
 }

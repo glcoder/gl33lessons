@@ -2,28 +2,22 @@
 #include <windows.h>
 
 #include "common.h"
-#include "OpenGL.h"
+#include "Logger.h"
 #include "GLWindow.h"
-
-void render(GLWindow *)
-{
-	OPENGL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-}
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-	GLWindow window;
 	int      result;
 
-	LOG_OPEN("lesson01.log");
+	LoggerCreate("lesson01.log");
 
-	if (!window.create("lesson01", 800, 600, false))
+	if (!GLWindowCreate("lesson01", 800, 600, false))
 		return 1;
 
-	window.setRenderProc(render);
-	result = window.mainLoop();
+	result = GLWindowMainLoop();
 
-	LOG_CLOSE();
+	GLWindowDestroy();
+	LoggerDestroy();
 
 	return result;
 }
