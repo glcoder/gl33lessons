@@ -49,13 +49,14 @@ format = ChoosePixelFormat(hDC, &pfd);
 
 {{{
 // если ни один из системных форматов не подходит или его невозможно применить к окну
-// то нам остается только записать сообщение об ошибке в лог-файл и прекратить работу
 if (!format || !SetPixelFormat(hDC, format, &pfd))
 {
 	LOG_ERROR("Setting pixel format fail (%d)\n", GetLastError());
 	return false;
 }
 }}}
+
+Как вы уже увидели, для записи сообщений в лог-файл используется макрос `LOG_ERROR`, он подобен функции `printf`. Этот макрос используется в исходных кодах приложенных к этому уроку (ссылки в конце страницы).
 
 В Windows для создания контекста OpenGL 3.3 нам понадобится функция-расширение `wglCreateContextAttribsARB` [http://www.opengl.org/registry/specs/ARB/wgl_create_context.txt 3], доступ к которой мы можем получить посредством специальной функции `wglGetProcAddress` [http://msdn.microsoft.com/en-us/library/dd374386.aspx 4], но для этого нам надо иметь уже готовый контекст OpenGL более старой версии. Поэтому для начала нам надо создать временный контекст OpenGL посредством вызова функции `wglCreateContext` [http://msdn.microsoft.com/en-us/library/dd374379.aspx 5]:
 
@@ -64,7 +65,6 @@ if (!format || !SetPixelFormat(hDC, format, &pfd))
 HGLRC hRCTemp = wglCreateContext(hDC);
 
 // если не получилось создать контекст или контекст не устанавливается для нашего окна
-// то запишем сообщение об ошибке в лог-файл и сообщим о неудаче
 if (!hRCTemp || !wglMakeCurrent(hDC, hRCTemp))
 {
 	LOG_ERROR("Сreating temp render context fail (%d)\n", GetLastError());
