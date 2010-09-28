@@ -90,11 +90,14 @@ PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
 wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
 	wglGetProcAddress("wglCreateContextAttribsARB"));
 
+// временный контекст OpenGL нам больше не нужен, удаляем его
+wglMakeCurrent(NULL, NULL);
+wglDeleteContext(hRCTemp);
+
 // если драйвер видеокарты не предоставил нам адрес этой функции
 if (!wglCreateContextAttribsARB)
 {
 	LOG_ERROR("wglCreateContextAttribsARB fail (%d)\n", GetLastError());
-	wglDeleteContext(hRCTemp); // удаляем созданный выше временный контекст OpenGL
 	return false;
 }
 }}}
@@ -135,12 +138,8 @@ hRC = wglCreateContextAttribsARB(hDC, 0, attribs);
 if (!hRC || !wglMakeCurrent(hDC, hRC))
 {
 	LOG_ERROR("Creating render context fail (%d)\n", GetLastError());
-	wglDeleteContext(hRCTemp); // удаляем созданный выше временный контекст OpenGL
 	return false;
 }
-
-// временный контекст OpenGL нам больше не нужен, удаляем его
-wglDeleteContext(hRCTemp);
 }}}
 
 В итоге мы имеем на руках полнофункциональный контекст с поддержкой OpenGL 3.3, который мы можем использовать для дальнейшей работы.
