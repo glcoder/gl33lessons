@@ -15,7 +15,7 @@ HGLRC     g_hRC;
 // обработчик сообщений окна
 LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-bool GLWindowCreate(const char *title, int width, int height, bool fullScreen = false)
+bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 {
 	ASSERT(title);
 	ASSERT(width > 0);
@@ -134,7 +134,7 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen = 
 		return false;
 	}
 
-	// создадим контекст рендеринга для OpenGL 3.x
+	// создадим расширенный контекст с поддержкой OpenGL 3
 	g_hRC = wglCreateContextAttribsARB(g_hDC, 0, attribs);
 	if (!g_hRC || !wglMakeCurrent(g_hDC, g_hRC))
 	{
@@ -143,7 +143,10 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen = 
 		return false;
 	}
 
-	// выведем в лог немного информации о контексте рендеринга
+	// больше нам временный контекст OpenGL не нужен
+	wglDeleteContext(hRCTemp);
+
+	// выведем в лог немного информации о контексте OpenGL
 	int major, minor;
 	glGetIntegerv(GL_MAJOR_VERSION, &major);
 	glGetIntegerv(GL_MINOR_VERSION, &minor);
@@ -159,9 +162,6 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen = 
 		(const char*)glGetString(GL_SHADING_LANGUAGE_VERSION),
 		major, minor
 	);
-
-	// больше нам временный контекст рендеринга не нужен
-	wglDeleteContext(hRCTemp);
 
 	// зададим размеры окна
 	GLWindowSetSize(width, height, fullScreen);
@@ -198,7 +198,7 @@ void GLWindowDestroy()
 		UnregisterClass(GLWINDOW_CLASS_NAME, g_hInstance);
 }
 
-void GLWindowSetSize(int width, int height, bool fullScreen = false)
+void GLWindowSetSize(int width, int height, bool fullScreen)
 {
 	ASSERT(width > 0);
 	ASSERT(height > 0);
