@@ -3,7 +3,8 @@
 
 #include "GLWindow.h"
 
-const char GLWINDOW_CLASS_NAME[] = "GLWindow_class";
+const char GLWINDOW_CLASS_NAME[]             = "GLWindow_class";
+const char GLWINDOW_MULTISAMPLE_CLASS_NAME[] = "GLWindow_multisample_class";
 
 GLWindow  g_window;
 
@@ -11,6 +12,14 @@ HINSTANCE g_hInstance;
 HWND      g_hWnd;
 HDC       g_hDC;
 HGLRC     g_hRC;
+
+// устанавливается если необходим мультисамплинг
+int g_samples = 0;
+
+// определим указатели на интересующие функции расширения
+PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
+PFNWGLCHOOSEPIXELFORMATARBPROC    wglChoosePixelFormatARB    = NULL;
+PFNWGLSWAPINTERVALEXTPROC         wglSwapIntervalEXT         = NULL;
 
 // обработчик сообщений окна
 LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -30,19 +39,6 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 
 	// обнуляем стейт окна
 	memset(&g_window, 0, sizeof(g_window));
-
-	// определим указатель на функцию создания расширенного контекста OpenGL
-	PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
-
-	// укажем атрибуты для создания расширенного контекста OpenGL
-	int attribs[] =
-	{
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-		WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-		0
-	};
 
 	g_hInstance = static_cast<HINSTANCE>(GetModuleHandle(NULL));
 
@@ -97,18 +93,54 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// описание формата пикселей
-	memset(&pfd, 0, sizeof(pfd));
-	pfd.nSize      = sizeof(pfd);
-	pfd.nVersion   = 1;
-	pfd.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.cColorBits = 32;
-	pfd.cDepthBits = 24;
+	// если необходим мультисамплинг
+	if (g_samples)
+	{
+		// атрибуты окна с мультсамплингом
+		UINT count;
+		int pfAttribs[] = {
+			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+			WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB,
+			WGL_COLOR_BITS_ARB,     24,
+			WGL_ALPHA_BITS_ARB,     8,
+			WGL_DEPTH_BITS_ARB,     24,
+			WGL_STENCIL_BITS_ARB,   0,
+			WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
+			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+			WGL_SAMPLES_ARB,        g_samples,
+			0
+		};
 
-	// запросим формат пикселей, ближайший к описанному выше
-	format = ChoosePixelFormat(g_hDC, &pfd);
-	if (!format || !SetPixelFormat(g_hDC, format, &pfd))
+		BOOL valid = wglChoosePixelFormatARB(g_hDC, pfAttribs, NULL, 1, &format, &count);
+
+		if (!valid || !count)
+		{
+			LOG_ERROR("wglChoosePixelFormatARB match %u formats (%d)\n", count, GetLastError());
+			return false;
+		}
+	} else
+	{
+		// описание формата пикселей
+		memset(&pfd, 0, sizeof(pfd));
+		pfd.nSize      = sizeof(pfd);
+		pfd.nVersion   = 1;
+		pfd.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+		pfd.iPixelType = PFD_TYPE_RGBA;
+		pfd.cColorBits = 32;
+		pfd.cDepthBits = 24;
+
+		// запросим формат пикселей, ближайший к описанному выше
+		format = ChoosePixelFormat(g_hDC, &pfd);
+		if (!format)
+		{
+			LOG_ERROR("ChoosePixelFormat fail (%d)\n", GetLastError());
+			return false;
+		}
+	}
+
+	// попытаемся установить формат пикселей
+	if (!SetPixelFormat(g_hDC, format, &pfd))
 	{
 		LOG_ERROR("Setting pixel format fail (%d)\n", GetLastError());
 		return false;
@@ -133,12 +165,22 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 
 	if (!wglCreateContextAttribsARB)
 	{
-		LOG_ERROR("wglCreateContextAttribsARB fail (%d)\n", GetLastError());
+		LOG_ERROR("Fail to get wglCreateContextAttribsARB (%d)\n", GetLastError());
 		return false;
 	}
 
+	// укажем атрибуты для создания расширенного контекста OpenGL
+	int glAttribs[] =
+	{
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+		WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+		0
+	};
+
 	// создадим расширенный контекст с поддержкой OpenGL 3
-	g_hRC = wglCreateContextAttribsARB(g_hDC, 0, attribs);
+	g_hRC = wglCreateContextAttribsARB(g_hDC, 0, glAttribs);
 	if (!g_hRC || !wglMakeCurrent(g_hDC, g_hRC))
 	{
 		LOG_ERROR("Creating render context fail (%d)\n", GetLastError());
@@ -166,6 +208,121 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 	GLWindowSetSize(width, height, fullScreen);
 
 	return true;
+}
+
+bool GLWindowCreateMultisample(const char *title, int width, int height, int samples, bool fullScreen)
+{
+	ASSERT(title);
+	ASSERT(width > 0);
+	ASSERT(height > 0);
+	ASSERT(samples >= 0);
+
+	// если мультисамплинг не нужен, создаем обычное окно
+	if (!samples)
+	{
+		g_samples = 0;
+		return GLWindowCreate(title, width, height, fullScreen);
+	}
+
+	WNDCLASSEX            wcx;
+	PIXELFORMATDESCRIPTOR pfd;
+	HINSTANCE             hInstance;
+	HWND                  hWndTemp;
+	HGLRC                 hRCTemp;
+	HDC                   hDCTemp;
+	int                   format;
+
+	hInstance = static_cast<HINSTANCE>(GetModuleHandle(NULL));
+
+	// регистрация класса временного окна
+	memset(&wcx, 0, sizeof(wcx));
+	wcx.cbSize        = sizeof(wcx);
+	wcx.lpfnWndProc   = reinterpret_cast<WNDPROC>(DefWindowProc);
+	wcx.hInstance     = hInstance;
+	wcx.lpszClassName = GLWINDOW_MULTISAMPLE_CLASS_NAME;
+
+	if (!RegisterClassEx(&wcx))
+	{
+		LOG_ERROR("RegisterClassEx for multisample fail (%d)\n", GetLastError());
+		return false;
+	}
+
+	// создаем временное окно
+	hWndTemp = CreateWindowEx(0, GLWINDOW_MULTISAMPLE_CLASS_NAME, NULL,
+		0, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);
+
+	if (!hWndTemp)
+	{
+		LOG_ERROR("CreateWindowEx for multisample fail (%d)\n", GetLastError());
+		return false;
+	}
+
+	// получим дескриптор контекста временного окна
+	hDCTemp = GetDC(hWndTemp);
+
+	if (!hDCTemp)
+	{
+		LOG_ERROR("GetDC for multisample fail (%d)\n", GetLastError());
+		return false;
+	}
+
+	ShowWindow(hWndTemp, SW_HIDE);
+
+	// описание формата пикселей для временного окна
+	memset(&pfd, 0, sizeof(pfd));
+	pfd.nSize      = sizeof(pfd);
+	pfd.nVersion   = 1;
+	pfd.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.cColorBits = 32;
+	pfd.cDepthBits = 24;
+
+	// запросим формат пикселей, ближайший к описанному выше
+	format = ChoosePixelFormat(hDCTemp, &pfd);
+	if (!format || !SetPixelFormat(hDCTemp, format, &pfd))
+	{
+		LOG_ERROR("Setting pixel format for multisample fail (%d)\n", GetLastError());
+		return false;
+	}
+
+	// создадим временный контекст рендеринга
+	hRCTemp = wglCreateContext(hDCTemp);
+	if (!hRCTemp || !wglMakeCurrent(hDCTemp, hRCTemp))
+	{
+		LOG_ERROR("Сreating render context for multisample fail (%d)\n", GetLastError());
+		return false;
+	}
+
+	if (strstr((const char*)glGetString(GL_EXTENSIONS), "WGL_ARB_multisample") != 0)
+	{
+		LOG_ERROR("Multisampling not supported");
+		return false;
+	}
+
+	// получим адрес функции установки атрибутов контекста рендеринга
+	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
+		wglGetProcAddress("wglCreateContextAttribsARB"));
+
+	// получим адрес функции получения расширенного формата пикселей
+	wglChoosePixelFormatARB = reinterpret_cast<PFNWGLCHOOSEPIXELFORMATARBPROC>(
+		wglGetProcAddress("wglChoosePixelFormatARB"));
+
+	if (!wglChoosePixelFormatARB)
+	{
+		LOG_ERROR("Fail to get wglChoosePixelFormatARB (%d)\n", GetLastError());
+		return false;
+	}
+
+	g_samples = samples;
+
+	// освобождаем ресурсы
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(hRCTemp);
+	ReleaseDC(hWndTemp, hDCTemp);
+	DestroyWindow(hWndTemp);
+	UnregisterClass(GLWINDOW_MULTISAMPLE_CLASS_NAME, hInstance);
+
+	return GLWindowCreate(title, width, height, fullScreen);
 }
 
 void GLWindowDestroy()
@@ -375,4 +532,3 @@ LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-

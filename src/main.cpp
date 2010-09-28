@@ -11,7 +11,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	LoggerCreate("lesson01.log");
 
-	if (!GLWindowCreate("lesson01", 800, 600, false))
+	if (!GLWindowCreateMultisample("lesson01", 800, 600, 4, false))
 		return 1;
 
 	result = GLWindowMainLoop();

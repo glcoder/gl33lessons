@@ -18,6 +18,7 @@ struct GLWindow
 };
 
 bool GLWindowCreate(const char *title, int width, int height, bool fullScreen = false);
+bool GLWindowCreateMultisample(const char *title, int width, int height, int samples, bool fullScreen = false);
 void GLWindowDestroy();
 
 void GLWindowSetSize(int width, int height, bool fullScreen = false);
