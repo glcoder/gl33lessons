@@ -127,10 +127,13 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
 		wglGetProcAddress("wglCreateContextAttribsARB"));
 
+	// временный контекст OpenGL нам больше не нужен
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(hRCTemp);
+
 	if (!wglCreateContextAttribsARB)
 	{
 		LOG_ERROR("wglCreateContextAttribsARB fail (%d)\n", GetLastError());
-		wglDeleteContext(hRCTemp);
 		return false;
 	}
 
@@ -139,12 +142,8 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 	if (!g_hRC || !wglMakeCurrent(g_hDC, g_hRC))
 	{
 		LOG_ERROR("Creating render context fail (%d)\n", GetLastError());
-		wglDeleteContext(hRCTemp);
 		return false;
 	}
-
-	// больше нам временный контекст OpenGL не нужен
-	wglDeleteContext(hRCTemp);
 
 	// выведем в лог немного информации о контексте OpenGL
 	int major, minor;
