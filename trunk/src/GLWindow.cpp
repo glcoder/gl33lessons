@@ -7,10 +7,15 @@ const char GLWINDOW_CLASS_NAME[] = "GLWindow_class";
 
 GLWindow  g_window;
 
-HINSTANCE g_hInstance;
-HWND      g_hWnd;
-HDC       g_hDC;
-HGLRC     g_hRC;
+HINSTANCE g_hInstance = NULL;
+HWND      g_hWnd      = NULL;
+HDC       g_hDC       = NULL;
+HGLRC     g_hRC       = NULL;
+
+GLWindowInitFunc   GLWindowInit   = NULL;
+GLWindowClearFunc  GLWindowClear  = NULL;
+GLWindowRenderFunc GLWindowRender = NULL;
+GLWindowUpdateFunc GLWindowUpdate = NULL;
 
 // обработчик сообщений окна
 LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -44,13 +49,13 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		0
 	};
 
-	g_hInstance = static_cast<HINSTANCE>(GetModuleHandle(NULL));
+	g_hInstance = (HINSTANCE)GetModuleHandle(NULL);
 
 	// регистрация класса окна
 	memset(&wcx, 0, sizeof(wcx));
 	wcx.cbSize        = sizeof(wcx);
 	wcx.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	wcx.lpfnWndProc   = reinterpret_cast<WNDPROC>(GLWindowProc);
+	wcx.lpfnWndProc   = (WNDPROC)GLWindowProc;
 	wcx.hInstance     = g_hInstance;
 	wcx.lpszClassName = GLWINDOW_CLASS_NAME;
 	wcx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
@@ -124,8 +129,7 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 	}
 
 	// получим адрес функции установки атрибутов контекста рендеринга
-	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
-		wglGetProcAddress("wglCreateContextAttribsARB"));
+	wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)(wglGetProcAddress("wglCreateContextAttribsARB"));
 
 	// временный контекст OpenGL нам больше не нужен
 	wglMakeCurrent(NULL, NULL);
@@ -162,6 +166,10 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		major, minor
 	);
 
+	// попробуем загрузить расширения OpenGL
+	if (!OpenGLInitExtensions())
+		return false;
+
 	// зададим размеры окна
 	GLWindowSetSize(width, height, fullScreen);
 
@@ -170,11 +178,22 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 
 void GLWindowDestroy()
 {
+	g_window.running = g_window.active = false;
+
+	if (GLWindowClear)
+		GLWindowClear(&g_window);
+
+	GLWindowInit   = NULL;
+	GLWindowClear  = NULL;
+	GLWindowRender = NULL;
+	GLWindowUpdate = NULL;
+
 	// восстановим разрешение экрана
 	if (g_window.fullScreen)
 	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
 		ShowCursor(TRUE);
+		g_window.fullScreen = false;
 	}
 
 	// удаляем контекст рендеринга
@@ -182,19 +201,29 @@ void GLWindowDestroy()
 	{
 		wglMakeCurrent(NULL, NULL);
 		wglDeleteContext(g_hRC);
+		g_hRC = NULL;
 	}
 
 	// освобождаем контекст окна
 	if (g_hDC)
+	{
 		ReleaseDC(g_hWnd, g_hDC);
+		g_hDC = NULL;
+	}
 
 	// удаляем окно
 	if (g_hWnd)
+	{
 		DestroyWindow(g_hWnd);
+		g_hWnd = NULL;
+	}
 
 	// удаляем класс окна
 	if (g_hInstance)
+	{
 		UnregisterClass(GLWINDOW_CLASS_NAME, g_hInstance);
+		g_hInstance = NULL;
+	}
 }
 
 void GLWindowSetSize(int width, int height, bool fullScreen)
@@ -283,21 +312,39 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 	g_window.width  = rect.right - rect.left;
 	g_window.height = rect.bottom - rect.top;
 
-	// устанавливаем вьюпорт на все окно
-	OPENGL_CALL(glViewport(0, 0, g_window.width, g_window.height));
-
 	// центрируем курсор относительно окна
 	SetCursorPos(x + g_window.width / 2, y + g_window.height / 2);
 
 	OPENGL_CHECK_FOR_ERRORS();
 }
 
+void GLWindowSetInitFunc(GLWindowInitFunc init)
+{
+	GLWindowInit = init;
+}
+
+void GLWindowSetClearFunc(GLWindowClearFunc clear)
+{
+	GLWindowClear = clear;
+}
+
+void GLWindowSetRenderFunc(GLWindowRenderFunc render)
+{
+	GLWindowRender = render;
+}
+
+void GLWindowSetUpdateFunc(GLWindowUpdateFunc update)
+{
+	GLWindowUpdate = update;
+}
+
 int GLWindowMainLoop()
 {
-	MSG msg;
+	MSG    msg;
+	double beginFrameTime, deltaTime;
 
 	// основной цикл окна
-	g_window.running = g_window.active = true;
+	g_window.running = g_window.active = (GLWindowInit ? GLWindowInit(&g_window) : true);
 
 	while (g_window.running)
 	{
@@ -316,12 +363,25 @@ int GLWindowMainLoop()
 		// если окно в рабочем режиме и активно
 		if (g_window.running && g_window.active)
 		{
-			OPENGL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+			// надо брать время из таймера
+			beginFrameTime = 0.0;
 
-			SwapBuffers(g_hDC);
+			if (GLWindowRender)
+			{
+				GLWindowRender(&g_window);
+				SwapBuffers(g_hDC);
+			}
+
+			if (GLWindowUpdate)
+			{
+				// надо вычитать из текущего значения таймера
+				deltaTime = 1.0 - beginFrameTime;
+
+				GLWindowUpdate(&g_window, deltaTime);
+			}
 		}
 
-		Sleep(2);
+		//Sleep(2);
 	}
 
 	g_window.running = g_window.active = false;
@@ -332,12 +392,47 @@ LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
-		case WM_KEYDOWN:
-			if (wParam == VK_ESCAPE)
-				g_window.running = false;
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+			g_window.cursorPos[0] = (int)LOWORD(lParam);
+			g_window.cursorPos[1] = (int)HIWORD(lParam);
 
-			if (wParam == VK_F1)
-				GLWindowSetSize(g_window.width, g_window.height, !g_window.fullScreen);
+			switch (msg)
+			{
+				case WM_LBUTTONDOWN:
+				case WM_LBUTTONUP:
+					g_window.buttonState[0] = (msg == WM_LBUTTONDOWN);
+				break;
+
+				case WM_RBUTTONDOWN:
+				case WM_RBUTTONUP:
+					g_window.buttonState[1] = (msg == WM_RBUTTONDOWN);
+				break;
+
+				case WM_MBUTTONDOWN:
+				case WM_MBUTTONUP:
+					g_window.buttonState[2] = (msg == WM_MBUTTONDOWN);
+				break;
+			}
+
+			return FALSE;
+
+		case WM_MOUSEMOVE:
+			g_window.cursorPos[0] = (int)LOWORD(lParam);
+			g_window.cursorPos[1] = (int)HIWORD(lParam);
+
+			return FALSE;
+
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+		case WM_SYSKEYDOWN:
+		case WM_SYSKEYUP:
+			if (wParam < 256)
+				g_window.keyState[wParam] = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
 
 			return FALSE;
 

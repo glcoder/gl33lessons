@@ -5,9 +5,10 @@ BUILD_DIR  := build
 SOURCE_DIR := src
 
 OBJ := $(BUILD_DIR)/Logger.o $(BUILD_DIR)/OpenGL.o \
-	$(BUILD_DIR)/GLWindow.o $(BUILD_DIR)/main.o
+	$(BUILD_DIR)/GLWindow.o $(BUILD_DIR)/Shader.o \
+	$(BUILD_DIR)/main.o
 
-BIN := lesson01.exe
+BIN := lesson02.exe
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	g++ -c $(CPPFLAGS) $< -o $@
