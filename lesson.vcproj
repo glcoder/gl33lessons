@@ -117,6 +117,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\src\common.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\common.h"
 				>
 			</File>
@@ -146,14 +150,6 @@
 			</File>
 			<File
 				RelativePath=".\src\OpenGL.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Shader.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Shader.h"
 				>
 			</File>
 		</Filter>

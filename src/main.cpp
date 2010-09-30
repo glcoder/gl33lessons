@@ -4,7 +4,6 @@
 #include "common.h"
 #include "OpenGL.h"
 #include "GLWindow.h"
-#include "Shader.h"
 
 // количество вершин в нашей геометрии, у нас простой треугольник
 const int MESH_VERTEX_COUNT = 3;
@@ -38,119 +37,151 @@ static void Matrix4Perspective(float *M, float fovy, float aspect, float znear, 
 	M[12] = 0;          M[13] =  0; M[14] = -1; M[15] =  0;
 }
 
-bool Init(const GLWindow *window)
+bool GLWindowInit(const GLWindow *window)
 {
 	ASSERT(window);
+
+	char *shaderSource;
+	long sourceLength;
 
 	float projectionMatrix[16];
 	GLint projectionMatrixLocation, positionLocation, colorLocation;
 
 	// устанавливаем вьюпорт на все окно
-	OPENGL_CALL(glViewport(0, 0, window->width, window->height));
+	glViewport(0, 0, window->width, window->height);
 
 	// параметры OpenGL
-	OPENGL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
-	OPENGL_CALL(glClearDepth(1.0f));
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearDepth(1.0f);
 
-	shaderProgram  = ShaderProgramCreate();
-	vertexShader   = ShaderCreate(GL_VERTEX_SHADER);
-	fragmentShader = ShaderCreate(GL_FRAGMENT_SHADER);
+	shaderProgram  = glCreateProgram();
+	vertexShader   = glCreateShader(GL_VERTEX_SHADER);
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
 	// загрузим и скомпилируем вершинный шейдер
-	if (!ShaderLoadFromFile(vertexShader, "data/lesson.vs") || !ShaderCompile(vertexShader))
+	if (!LoadFile("data/lesson.vs", true, &shaderSource, &sourceLength))
+		return false;
+
+	glShaderSource(vertexShader, 1, &shaderSource, &sourceLength);
+	glCompileShader(vertexShader);
+
+	delete[] shaderSource;
+
+	if (ShaderStatus(vertexShader, GL_COMPILE_STATUS) != GL_TRUE)
 		return false;
 
 	// загрузим и скомпилируем фрагментный шейдер
-	if (!ShaderLoadFromFile(fragmentShader, "data/lesson.fs") || !ShaderCompile(fragmentShader))
+	if (!LoadFile("data/lesson.fs", true, &shaderSource, &sourceLength))
+		return false;
+
+	glShaderSource(fragmentShader, 1, &shaderSource, &sourceLength);
+	glCompileShader(fragmentShader);
+
+	delete[] shaderSource;
+
+	if (ShaderStatus(fragmentShader, GL_COMPILE_STATUS) != GL_TRUE)
 		return false;
 
 	// присоеденим загруженные шейдеры к шейдерной программе
-	ShaderProgramAttach(shaderProgram, vertexShader);
-	ShaderProgramAttach(shaderProgram, fragmentShader);
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+
+	OPENGL_CHECK_FOR_ERRORS();
 
 	// линковка шейдерной программы
-	if (!ShaderProgramLink(shaderProgram))
+	glLinkProgram(shaderProgram);
+	if (ShaderProgramStatus(shaderProgram, GL_LINK_STATUS) != GL_TRUE)
 		return false;
 
-	ShaderProgramUse(shaderProgram);
+	glUseProgram(shaderProgram);
 
 	// создадим перспективную матрицу
 	Matrix4Perspective(projectionMatrix, 45.0f,
 		(float)window->width / (float)window->height, 0.5f, 5.0f);
 
-	OPENGL_CALL(projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix"));
+	projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
 
 	if (projectionMatrixLocation != -1)
-		OPENGL_CALL(glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix));
+		glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix);
 
 	// проверка на корректность шейдерной программы
-	ShaderProgramValidate(shaderProgram);
+	glValidateProgram(shaderProgram);
+	if (ShaderProgramStatus(shaderProgram, GL_VALIDATE_STATUS) != GL_TRUE)
+		return false;
 
-	OPENGL_CALL(glGenVertexArrays(1, &meshVAO));
-	OPENGL_CALL(glBindVertexArray(meshVAO));
+	OPENGL_CHECK_FOR_ERRORS();
 
-	OPENGL_CALL(glGenBuffers(1, &meshVBO));
-	OPENGL_CALL(glBindBuffer(GL_ARRAY_BUFFER, meshVBO));
+	glGenVertexArrays(1, &meshVAO);
+	glBindVertexArray(meshVAO);
 
-	OPENGL_CALL(glBufferData(GL_ARRAY_BUFFER, MESH_VERTEX_COUNT * VERTEX_SIZE,
-		triangleMesh, GL_STATIC_DRAW));
+	glGenBuffers(1, &meshVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
 
-	OPENGL_CALL(positionLocation = glGetAttribLocation(shaderProgram, "position"));
+	glBufferData(GL_ARRAY_BUFFER, MESH_VERTEX_COUNT * VERTEX_SIZE,
+		triangleMesh, GL_STATIC_DRAW);
+
+	positionLocation = glGetAttribLocation(shaderProgram, "position");
 	if (positionLocation != -1)
 	{
-		OPENGL_CALL(glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE,
-			VERTEX_SIZE, (const GLvoid*)VERTEX_POSITION_OFFSET));
-		OPENGL_CALL(glEnableVertexAttribArray(positionLocation));
+		glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE,
+			VERTEX_SIZE, (const GLvoid*)VERTEX_POSITION_OFFSET);
+		glEnableVertexAttribArray(positionLocation);
 	}
 
-	OPENGL_CALL(colorLocation = glGetAttribLocation(shaderProgram, "color"));
+	colorLocation = glGetAttribLocation(shaderProgram, "color");
 	if (colorLocation != -1)
 	{
-		OPENGL_CALL(glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE,
-			VERTEX_SIZE, (const GLvoid*)VERTEX_COLOR_OFFSET));
-		OPENGL_CALL(glEnableVertexAttribArray(colorLocation));
+		glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE,
+			VERTEX_SIZE, (const GLvoid*)VERTEX_COLOR_OFFSET);
+		glEnableVertexAttribArray(colorLocation);
 	}
+
+	OPENGL_CHECK_FOR_ERRORS();
 
 	return true;
 }
 
-void Clear(const GLWindow *window)
+void GLWindowClear(const GLWindow *window)
 {
 	ASSERT(window);
 
-	OPENGL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-	OPENGL_CALL(glDeleteBuffers(1, &meshVBO));
+	OPENGL_CHECK_FOR_ERRORS();
 
-	OPENGL_CALL(glBindVertexArray(0));
-	OPENGL_CALL(glDeleteVertexArrays(1, &meshVAO));
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &meshVBO);
 
-	ShaderProgramUse(0);
-	ShaderProgramDestroy(shaderProgram);
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &meshVAO);
 
-	ShaderDestroy(vertexShader);
-	ShaderDestroy(fragmentShader);
+	glUseProgram(0);
+	glDeleteProgram(shaderProgram);
+
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
 }
 
-void Render(const GLWindow *window)
+void GLWindowRender(const GLWindow *window)
 {
 	ASSERT(window);
 
 	// очистим буфер цвета и глубины
-	OPENGL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	ShaderProgramUse(shaderProgram);
+	glUseProgram(shaderProgram);
 
-	OPENGL_CALL(glBindVertexArray(meshVAO));
-	OPENGL_CALL(glDrawArrays(GL_TRIANGLES, 0, MESH_VERTEX_COUNT));
+	glBindVertexArray(meshVAO);
+	glDrawArrays(GL_TRIANGLES, 0, MESH_VERTEX_COUNT);
+
+	OPENGL_CHECK_FOR_ERRORS();
 }
 
-void Update(const GLWindow *window, double dt)
+void GLWindowUpdate(const GLWindow *window, double deltaTime)
 {
 	ASSERT(window);
 
-	static bool fullScreenSwitched = false;
+	static bool screeModeSwitched = false;
 
-	// выход из приложения
+	// выход из приложения по кнопке Esc
 	if (window->keyState[VK_ESCAPE])
 		GLWindowDestroy();
 
@@ -158,16 +189,15 @@ void Update(const GLWindow *window, double dt)
 	// осуществляется по нажатию комбинации Alt+Enter
 	if (window->keyState[VK_MENU] && window->keyState[VK_RETURN])
 	{
-		if (!fullScreenSwitched)
+		if (!screeModeSwitched)
 		{
 			GLWindowSetSize(window->width, window->height, !window->fullScreen);
-			fullScreenSwitched = true;
+			screeModeSwitched = true;
 		}
 	} else
 	{
-		fullScreenSwitched = false;
+		screeModeSwitched = false;
 	}
-		
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
@@ -178,11 +208,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	if (!GLWindowCreate("lesson02", 800, 600, false))
 		return 1;
-
-	GLWindowSetInitFunc(Init);
-	GLWindowSetClearFunc(Clear);
-	GLWindowSetRenderFunc(Render);
-	GLWindowSetUpdateFunc(Update);
 
 	result = GLWindowMainLoop();
 

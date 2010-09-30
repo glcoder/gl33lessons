@@ -4,8 +4,8 @@ LDFLAGS  := -static-libgcc -lopengl32 -mwindows
 BUILD_DIR  := build
 SOURCE_DIR := src
 
-OBJ := $(BUILD_DIR)/Logger.o $(BUILD_DIR)/OpenGL.o \
-	$(BUILD_DIR)/GLWindow.o $(BUILD_DIR)/Shader.o \
+OBJ := $(BUILD_DIR)/common.o $(BUILD_DIR)/Logger.o \
+	$(BUILD_DIR)/OpenGL.o $(BUILD_DIR)/GLWindow.o \
 	$(BUILD_DIR)/main.o
 
 BIN := lesson02.exe

@@ -15,18 +15,13 @@ extern GLenum g_OpenGLError;
 
 // проверка на ошибки OpenGL
 #define OPENGL_CHECK_FOR_ERRORS() \
-	if ((g_OpenGLError = glGetError()) != GL_NO_ERROR) \
-		LOG_ERROR("OpenGL error %d\n", (int)g_OpenGLError);
-
-// безопасный вызов функции OpenGL
-#define OPENGL_CALL(expression) \
-	{ \
-		expression; \
-		if ((g_OpenGLError = glGetError()) != GL_NO_ERROR) \
-			LOG_ERROR("OpenGL expression \"" #expression "\" error %d\n", (int)g_OpenGLError); \
-	}
+	while ((g_OpenGLError = glGetError()) != GL_NO_ERROR) \
+		LOG_ERROR("OpenGL error 0x%X\n", (unsigned)g_OpenGLError);
 
 bool OpenGLInitExtensions();
+
+GLint ShaderProgramStatus(GLuint program, GLenum param);
+GLint ShaderStatus(GLuint shader, GLenum param);
 
 // расширения OpenGL
 // VAO

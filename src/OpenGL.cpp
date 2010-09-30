@@ -2,41 +2,41 @@
 
 GLenum g_OpenGLError = GL_NO_ERROR;
 
-// расширения OpenGL
-// VAO
-PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays    = NULL;
-PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays = NULL;
-PFNGLBINDVERTEXARRAYPROC    glBindVertexArray    = NULL;
-// VBO
-PFNGLGENBUFFERSPROC    glGenBuffers    = NULL;
-PFNGLDELETEBUFFERSPROC glDeleteBuffers = NULL;
-PFNGLBINDBUFFERPROC    glBindBuffer    = NULL;
-PFNGLBUFFERDATAPROC    glBufferData    = NULL;
-PFNGLBUFFERSUBDATAPROC glBufferSubData = NULL;
-// Shaders
-PFNGLCREATEPROGRAMPROC     glCreateProgram     = NULL;
-PFNGLDELETEPROGRAMPROC     glDeleteProgram     = NULL;
-PFNGLLINKPROGRAMPROC       glLinkProgram       = NULL;
-PFNGLVALIDATEPROGRAMPROC   glValidateProgram   = NULL;
-PFNGLUSEPROGRAMPROC        glUseProgram        = NULL;
-PFNGLGETPROGRAMIVPROC      glGetProgramiv      = NULL;
-PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
-PFNGLCREATESHADERPROC      glCreateShader      = NULL;
-PFNGLDELETESHADERPROC      glDeleteShader      = NULL;
-PFNGLSHADERSOURCEPROC      glShaderSource      = NULL;
-PFNGLCOMPILESHADERPROC     glCompileShader     = NULL;
-PFNGLATTACHSHADERPROC      glAttachShader      = NULL;
-PFNGLDETACHSHADERPROC      glDetachShader      = NULL;
-PFNGLGETSHADERIVPROC       glGetShaderiv       = NULL;
-PFNGLGETSHADERINFOLOGPROC  glGetShaderInfoLog  = NULL;
-// Shaders attributes
-PFNGLGETATTRIBLOCATIONPROC        glGetAttribLocation        = NULL;
-PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer      = NULL;
-PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray  = NULL;
-PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray = NULL;
-// Shaders uniforms
-PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
-PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv   = NULL;
+GLint ShaderProgramStatus(GLuint program, GLenum param)
+{
+	GLint status, length;
+	GLchar buffer[1024];
+
+	glGetProgramiv(program, param, &status);
+
+	if (status != GL_TRUE)
+	{
+		glGetProgramInfoLog(program, 1024, &length, buffer);
+		LOG_ERROR("Shader program: %s\n", (const char*)buffer);
+	}
+
+	OPENGL_CHECK_FOR_ERRORS();
+
+	return status;
+}
+
+GLint ShaderStatus(GLuint shader, GLenum param)
+{
+	GLint status, length;
+	GLchar buffer[1024];
+
+	glGetShaderiv(shader, param, &status);
+
+	if (status != GL_TRUE)
+	{
+		glGetShaderInfoLog(shader, 1024, &length, buffer);
+		LOG_ERROR("Shader: %s\n", (const char*)buffer);
+	}
+
+	OPENGL_CHECK_FOR_ERRORS();
+
+	return status;
+}
 
 #define OPENGL_GET_PROC(p,n) \
 	n = (p)wglGetProcAddress(#n); \
@@ -83,5 +83,43 @@ bool OpenGLInitExtensions()
 	OPENGL_GET_PROC(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation);
 	OPENGL_GET_PROC(PFNGLUNIFORMMATRIX4FVPROC,   glUniformMatrix4fv);
 
+	OPENGL_CHECK_FOR_ERRORS();
+
 	return true;
 }
+// объявим расширения OpenGL
+// VAO
+PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays    = NULL;
+PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays = NULL;
+PFNGLBINDVERTEXARRAYPROC    glBindVertexArray    = NULL;
+// VBO
+PFNGLGENBUFFERSPROC    glGenBuffers    = NULL;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers = NULL;
+PFNGLBINDBUFFERPROC    glBindBuffer    = NULL;
+PFNGLBUFFERDATAPROC    glBufferData    = NULL;
+PFNGLBUFFERSUBDATAPROC glBufferSubData = NULL;
+// Shaders
+PFNGLCREATEPROGRAMPROC     glCreateProgram     = NULL;
+PFNGLDELETEPROGRAMPROC     glDeleteProgram     = NULL;
+PFNGLLINKPROGRAMPROC       glLinkProgram       = NULL;
+PFNGLVALIDATEPROGRAMPROC   glValidateProgram   = NULL;
+PFNGLUSEPROGRAMPROC        glUseProgram        = NULL;
+PFNGLGETPROGRAMIVPROC      glGetProgramiv      = NULL;
+PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
+PFNGLCREATESHADERPROC      glCreateShader      = NULL;
+PFNGLDELETESHADERPROC      glDeleteShader      = NULL;
+PFNGLSHADERSOURCEPROC      glShaderSource      = NULL;
+PFNGLCOMPILESHADERPROC     glCompileShader     = NULL;
+PFNGLATTACHSHADERPROC      glAttachShader      = NULL;
+PFNGLDETACHSHADERPROC      glDetachShader      = NULL;
+PFNGLGETSHADERIVPROC       glGetShaderiv       = NULL;
+PFNGLGETSHADERINFOLOGPROC  glGetShaderInfoLog  = NULL;
+// Shaders attributes
+PFNGLGETATTRIBLOCATIONPROC        glGetAttribLocation        = NULL;
+PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer      = NULL;
+PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray  = NULL;
+PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray = NULL;
+// Shaders uniforms
+PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
+PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv   = NULL;
+
