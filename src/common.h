@@ -23,6 +23,6 @@ typedef unsigned __int32 uint32_t;
 
 #include "Logger.h"
 
-bool LoadFile(const char *fileName, bool binary, char **buffer, long *size);
+bool LoadFile(const char *fileName, bool binary, uint8_t **buffer, uint32_t *size);
 
 #endif /* COMMON_H */

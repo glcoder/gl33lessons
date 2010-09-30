@@ -13,14 +13,27 @@
 // глобальная перменная для хранения ошибки OpenGL
 extern GLenum g_OpenGLError;
 
+// получть адрес функции из драйвера
+#define OPENGL_GET_PROC(p,n) \
+	n = (p)wglGetProcAddress(#n); \
+	if (NULL == n) \
+	{ \
+		LOG_ERROR("Loading extension '%s' fail (%d)\n", #n, GetLastError()); \
+		return false; \
+	}
+
 // проверка на ошибки OpenGL
 #define OPENGL_CHECK_FOR_ERRORS() \
-	while ((g_OpenGLError = glGetError()) != GL_NO_ERROR) \
+	if ((g_OpenGLError = glGetError()) != GL_NO_ERROR) \
 		LOG_ERROR("OpenGL error 0x%X\n", (unsigned)g_OpenGLError);
 
+// инициализация необходимых расширений OpenGL
 bool OpenGLInitExtensions();
 
+// проверка статуса шейдерной программы
 GLint ShaderProgramStatus(GLuint program, GLenum param);
+
+// проверка статуса шейдера
 GLint ShaderStatus(GLuint shader, GLenum param);
 
 // расширения OpenGL

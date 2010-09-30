@@ -38,14 +38,6 @@ GLint ShaderStatus(GLuint shader, GLenum param)
 	return status;
 }
 
-#define OPENGL_GET_PROC(p,n) \
-	n = (p)wglGetProcAddress(#n); \
-	if (NULL == n) \
-	{ \
-		LOG_ERROR("Loading extension '%s' fail\n", #n); \
-		return false; \
-	}
-
 bool OpenGLInitExtensions()
 {
 	// VAO
