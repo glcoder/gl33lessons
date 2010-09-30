@@ -12,11 +12,6 @@ HWND      g_hWnd      = NULL;
 HDC       g_hDC       = NULL;
 HGLRC     g_hRC       = NULL;
 
-GLWindowInitFunc   GLWindowInit   = NULL;
-GLWindowClearFunc  GLWindowClear  = NULL;
-GLWindowRenderFunc GLWindowRender = NULL;
-GLWindowUpdateFunc GLWindowUpdate = NULL;
-
 // обработчик сообщений окна
 LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -180,13 +175,7 @@ void GLWindowDestroy()
 {
 	g_window.running = g_window.active = false;
 
-	if (GLWindowClear)
-		GLWindowClear(&g_window);
-
-	GLWindowInit   = NULL;
-	GLWindowClear  = NULL;
-	GLWindowRender = NULL;
-	GLWindowUpdate = NULL;
+	GLWindowClear(&g_window);
 
 	// восстановим разрешение экрана
 	if (g_window.fullScreen)
@@ -318,33 +307,13 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 	OPENGL_CHECK_FOR_ERRORS();
 }
 
-void GLWindowSetInitFunc(GLWindowInitFunc init)
-{
-	GLWindowInit = init;
-}
-
-void GLWindowSetClearFunc(GLWindowClearFunc clear)
-{
-	GLWindowClear = clear;
-}
-
-void GLWindowSetRenderFunc(GLWindowRenderFunc render)
-{
-	GLWindowRender = render;
-}
-
-void GLWindowSetUpdateFunc(GLWindowUpdateFunc update)
-{
-	GLWindowUpdate = update;
-}
-
 int GLWindowMainLoop()
 {
 	MSG    msg;
 	double beginFrameTime, deltaTime;
 
 	// основной цикл окна
-	g_window.running = g_window.active = (GLWindowInit ? GLWindowInit(&g_window) : true);
+	g_window.running = g_window.active = GLWindowInit(&g_window);
 
 	while (g_window.running)
 	{
@@ -366,19 +335,13 @@ int GLWindowMainLoop()
 			// надо брать время из таймера
 			beginFrameTime = 0.0;
 
-			if (GLWindowRender)
-			{
-				GLWindowRender(&g_window);
-				SwapBuffers(g_hDC);
-			}
+			GLWindowRender(&g_window);
+			SwapBuffers(g_hDC);
 
-			if (GLWindowUpdate)
-			{
-				// надо вычитать из текущего значения таймера
-				deltaTime = 1.0 - beginFrameTime;
+			// надо вычитать из текущего значения таймера
+			deltaTime = 1.0 - beginFrameTime;
 
-				GLWindowUpdate(&g_window, deltaTime);
-			}
+			GLWindowUpdate(&g_window, deltaTime);
 		}
 
 		//Sleep(2);

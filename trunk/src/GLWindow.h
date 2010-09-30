@@ -24,20 +24,15 @@ struct GLWindow
 	bool buttonState[3];
 };
 
-typedef bool (*GLWindowInitFunc)(const GLWindow *);
-typedef void (*GLWindowClearFunc)(const GLWindow *);
-typedef void (*GLWindowRenderFunc)(const GLWindow *);
-typedef void (*GLWindowUpdateFunc)(const GLWindow *, double);
-
 bool GLWindowCreate(const char *title, int width, int height, bool fullScreen = false);
 void GLWindowDestroy();
 
 void GLWindowSetSize(int width, int height, bool fullScreen = false);
 
-void GLWindowSetInitFunc(GLWindowInitFunc init);
-void GLWindowSetClearFunc(GLWindowClearFunc clear);
-void GLWindowSetRenderFunc(GLWindowRenderFunc render);
-void GLWindowSetUpdateFunc(GLWindowUpdateFunc update);
+bool GLWindowInit(const GLWindow *window);
+void GLWindowClear(const GLWindow *window);
+void GLWindowRender(const GLWindow *window);
+void GLWindowUpdate(const GLWindow *window, double deltaTime);
 
 int GLWindowMainLoop();
 
