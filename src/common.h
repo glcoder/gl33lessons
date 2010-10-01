@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <cassert>
+#include <cmath>
 
 #if defined(_MSC_VER)
 typedef __int8           int8_t;
@@ -21,5 +22,7 @@ typedef unsigned __int32 uint32_t;
 #endif
 
 #include "Logger.h"
+
+bool LoadFile(const char *fileName, bool binary, uint8_t **buffer, uint32_t *size);
 
 #endif /* COMMON_H */

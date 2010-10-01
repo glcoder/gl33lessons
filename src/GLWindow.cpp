@@ -3,26 +3,36 @@
 
 #include "GLWindow.h"
 
-const char GLWINDOW_CLASS_NAME[]             = "GLWindow_class";
-const char GLWINDOW_MULTISAMPLE_CLASS_NAME[] = "GLWindow_multisample_class";
+static const uint8_t INPUT_UP = 0, INPUT_DOWN = 1, INPUT_PRESSED = 2;
 
-GLWindow  g_window;
+static const char GLWINDOW_CLASS_NAME[] = "GLWindow_class";
+static const char GLWINDOW_MULTISAMPLE_CLASS_NAME[] = "GLWindow_multisample_class";
 
-HINSTANCE g_hInstance;
-HWND      g_hWnd;
-HDC       g_hDC;
-HGLRC     g_hRC;
+static int g_samples = 0;
 
-// устанавливается если необходим мультисамплинг
-int g_samples = 0;
-
-// определим указатели на интересующие функции расширения
-PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
-PFNWGLCHOOSEPIXELFORMATARBPROC    wglChoosePixelFormatARB    = NULL;
-PFNWGLSWAPINTERVALEXTPROC         wglSwapIntervalEXT         = NULL;
+static HINSTANCE g_hInstance = NULL;
+static HWND      g_hWnd      = NULL;
+static HDC       g_hDC       = NULL;
+static HGLRC     g_hRC       = NULL;
 
 // обработчик сообщений окна
-LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+// хранение стейта окна и ввода
+static GLWindow g_window;
+static Input    g_input;
+
+static double        g_timerFrequency = 0.0;
+static LARGE_INTEGER g_qpc;
+
+static PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
+static PFNWGLCHOOSEPIXELFORMATARBPROC    wglChoosePixelFormatARB    = NULL;
+
+static double GetTimerTicks()
+{
+	QueryPerformanceCounter(&g_qpc);
+	return g_timerFrequency * g_qpc.QuadPart;
+}
 
 bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 {
@@ -40,13 +50,35 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 	// обнуляем стейт окна
 	memset(&g_window, 0, sizeof(g_window));
 
-	g_hInstance = static_cast<HINSTANCE>(GetModuleHandle(NULL));
+	// обнуляем стейт ввода
+	memset(&g_input, 0, sizeof(g_input));
+
+	// определим указатель на функцию создания расширенного контекста OpenGL
+	PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
+
+	// укажем атрибуты для создания расширенного контекста OpenGL
+	int attribs[] =
+	{
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+		WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+		0
+	};
+
+	// инциализация таймера
+	QueryPerformanceFrequency(&g_qpc);
+	ASSERT(g_qpc.QuadPart > 0);
+
+	g_timerFrequency = 1.0 / g_qpc.QuadPart;
+
+	g_hInstance = (HINSTANCE)GetModuleHandle(NULL);
 
 	// регистрация класса окна
 	memset(&wcx, 0, sizeof(wcx));
 	wcx.cbSize        = sizeof(wcx);
 	wcx.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	wcx.lpfnWndProc   = reinterpret_cast<WNDPROC>(GLWindowProc);
+	wcx.lpfnWndProc   = (WNDPROC)GLWindowProc;
 	wcx.hInstance     = g_hInstance;
 	wcx.lpszClassName = GLWINDOW_CLASS_NAME;
 	wcx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
@@ -156,31 +188,14 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 	}
 
 	// получим адрес функции установки атрибутов контекста рендеринга
-	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
-		wglGetProcAddress("wglCreateContextAttribsARB"));
+	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
 
 	// временный контекст OpenGL нам больше не нужен
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hRCTemp);
 
-	if (!wglCreateContextAttribsARB)
-	{
-		LOG_ERROR("Fail to get wglCreateContextAttribsARB (%d)\n", GetLastError());
-		return false;
-	}
-
-	// укажем атрибуты для создания расширенного контекста OpenGL
-	int glAttribs[] =
-	{
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-		WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-		0
-	};
-
 	// создадим расширенный контекст с поддержкой OpenGL 3
-	g_hRC = wglCreateContextAttribsARB(g_hDC, 0, glAttribs);
+	g_hRC = wglCreateContextAttribsARB(g_hDC, 0, attribs);
 	if (!g_hRC || !wglMakeCurrent(g_hDC, g_hRC))
 	{
 		LOG_ERROR("Creating render context fail (%d)\n", GetLastError());
@@ -203,6 +218,10 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		(const char*)glGetString(GL_SHADING_LANGUAGE_VERSION),
 		major, minor
 	);
+
+	// попробуем загрузить расширения OpenGL
+	if (!OpenGLInitExtensions())
+		return false;
 
 	// зададим размеры окна
 	GLWindowSetSize(width, height, fullScreen);
@@ -300,12 +319,8 @@ bool GLWindowCreateMultisample(const char *title, int width, int height, int sam
 	}
 
 	// получим адрес функции установки атрибутов контекста рендеринга
-	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
-		wglGetProcAddress("wglCreateContextAttribsARB"));
-
-	// получим адрес функции получения расширенного формата пикселей
-	wglChoosePixelFormatARB = reinterpret_cast<PFNWGLCHOOSEPIXELFORMATARBPROC>(
-		wglGetProcAddress("wglChoosePixelFormatARB"));
+	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
+	OPENGL_GET_PROC(PFNWGLCHOOSEPIXELFORMATARBPROC,    wglChoosePixelFormatARB);
 
 	if (!wglChoosePixelFormatARB)
 	{
@@ -327,11 +342,16 @@ bool GLWindowCreateMultisample(const char *title, int width, int height, int sam
 
 void GLWindowDestroy()
 {
+	g_window.running = g_window.active = false;
+
+	GLWindowClear(&g_window);
+
 	// восстановим разрешение экрана
 	if (g_window.fullScreen)
 	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
 		ShowCursor(TRUE);
+		g_window.fullScreen = false;
 	}
 
 	// удаляем контекст рендеринга
@@ -339,19 +359,29 @@ void GLWindowDestroy()
 	{
 		wglMakeCurrent(NULL, NULL);
 		wglDeleteContext(g_hRC);
+		g_hRC = NULL;
 	}
 
 	// освобождаем контекст окна
 	if (g_hDC)
+	{
 		ReleaseDC(g_hWnd, g_hDC);
+		g_hDC = NULL;
+	}
 
 	// удаляем окно
 	if (g_hWnd)
+	{
 		DestroyWindow(g_hWnd);
+		g_hWnd = NULL;
+	}
 
 	// удаляем класс окна
 	if (g_hInstance)
+	{
 		UnregisterClass(GLWINDOW_CLASS_NAME, g_hInstance);
+		g_hInstance = NULL;
+	}
 }
 
 void GLWindowSetSize(int width, int height, bool fullScreen)
@@ -440,21 +470,19 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 	g_window.width  = rect.right - rect.left;
 	g_window.height = rect.bottom - rect.top;
 
-	// устанавливаем вьюпорт на все окно
-	OPENGL_CALL(glViewport(0, 0, g_window.width, g_window.height));
-
 	// центрируем курсор относительно окна
-	SetCursorPos(x + g_window.width / 2, y + g_window.height / 2);
+	InputSetCursorPos(g_window.width / 2, g_window.height / 2);
 
 	OPENGL_CHECK_FOR_ERRORS();
 }
 
 int GLWindowMainLoop()
 {
-	MSG msg;
+	MSG    msg;
+	double beginFrameTime, deltaTime;
 
 	// основной цикл окна
-	g_window.running = g_window.active = true;
+	g_window.running = g_window.active = GLWindowInit(&g_window);
 
 	while (g_window.running)
 	{
@@ -470,12 +498,21 @@ int GLWindowMainLoop()
 			DispatchMessage(&msg);
 		}
 
+		GLWindowInput(&g_window);
+
 		// если окно в рабочем режиме и активно
 		if (g_window.running && g_window.active)
 		{
-			OPENGL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+			// надо брать время из таймера
+			beginFrameTime = GetTimerTicks();
 
+			GLWindowRender(&g_window);
 			SwapBuffers(g_hDC);
+
+			// надо вычитать из текущего значения таймера
+			deltaTime = GetTimerTicks() - beginFrameTime;
+
+			GLWindowUpdate(&g_window, deltaTime);
 		}
 
 		Sleep(2);
@@ -489,46 +526,149 @@ LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
-		case WM_KEYDOWN:
-			if (wParam == VK_ESCAPE)
-				g_window.running = false;
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		{
+			g_input.cursorPos[0] = (int)LOWORD(lParam);
+			g_input.cursorPos[1] = (int)HIWORD(lParam);
 
-			if (wParam == VK_F1)
-				GLWindowSetSize(g_window.width, g_window.height, !g_window.fullScreen);
+			if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP)
+				g_input.buttonState[0] = (msg == WM_LBUTTONDOWN ? INPUT_PRESSED : INPUT_UP);
+
+			if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONUP)
+				g_input.buttonState[1] = (msg == WM_RBUTTONDOWN ? INPUT_PRESSED : INPUT_UP);
+
+			if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONUP)
+				g_input.buttonState[2] = (msg == WM_MBUTTONDOWN ? INPUT_PRESSED : INPUT_UP);
 
 			return FALSE;
+		}
+
+		case WM_MOUSEMOVE:
+		{
+			g_input.cursorPos[0] = (int)LOWORD(lParam);
+			g_input.cursorPos[1] = (int)HIWORD(lParam);
+
+			return FALSE;
+		}
+
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+		{
+			if (wParam < 256 && (lParam & 0x40000000) == 0)
+				g_input.keyState[wParam] = INPUT_PRESSED;
+
+			return FALSE;
+		}
+
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+		{
+			if (wParam < 256)
+				g_input.keyState[wParam] = INPUT_UP;
+
+			return FALSE;
+		}
 
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
+		{
 			g_window.active = (msg == WM_SETFOCUS);
 			return FALSE;
+		}
 
 		case WM_ACTIVATE:
-			g_window.active = (LOWORD(wParam) == WA_INACTIVE);
+		{
+			g_window.active = (LOWORD(wParam) != WA_INACTIVE);
 			return FALSE;
+		}
 
 		case WM_CLOSE:
+		{
 			g_window.running = g_window.active = false;
 			PostQuitMessage(0);
 			return FALSE;
+		}
 
 		case WM_SYSCOMMAND:
+		{
 			switch (wParam & 0xFFF0)
 			{
 				case SC_SCREENSAVE:
 				case SC_MONITORPOWER:
+				{
 					if (g_window.fullScreen)
 						return FALSE;
+
 					break;
+				}
 
 				case SC_KEYMENU:
+				case SC_TASKLIST:
+				{
 					return FALSE;
+				}
 			}
+
 			break;
+		}
 
 		case WM_ERASEBKGND:
+		{
 			return FALSE;
+		}
 	}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+bool InputIsKeyDown(uint8_t key)
+{
+	return (g_input.keyState[key] != 0);
+}
+
+bool InputIsKeyPressed(uint8_t key)
+{
+	bool pressed = (g_input.keyState[key] == INPUT_PRESSED);
+	g_input.keyState[key] = INPUT_DOWN;
+	return pressed;
+}
+
+bool InputIsButtonDown(uint8_t button)
+{
+	ASSERT(button < 3);
+
+	return (g_input.buttonState[button] != 0);
+}
+
+bool InputIsButtonClick(uint8_t button)
+{
+	ASSERT(button < 3);
+
+	bool pressed = (g_input.buttonState[button] == INPUT_PRESSED);
+	g_input.buttonState[button] = INPUT_DOWN;
+	return pressed;
+}
+
+void InputGetCursorPos(int *x, int *y)
+{
+	ASSERT(x);
+	ASSERT(y);
+
+	*x = g_input.cursorPos[0];
+	*y = g_input.cursorPos[1];
+}
+
+void InputSetCursorPos(int x, int y)
+{
+	POINT pos = {x, y};
+	ClientToScreen(g_hWnd, &pos);
+	SetCursorPos(pos.x, pos.y);
+
+	g_input.cursorPos[0] = x;
+	g_input.cursorPos[1] = y;
 }
