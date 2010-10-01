@@ -85,56 +85,32 @@ OPENGL_GET_PROC(PFNGLCREATEPROGRAMPROC, glCreateProgram);
 {{{
 #version 330 core
 
-
-
 uniform mat4 projectionMatrix;
 
-
-
 in vec3 position;
-
 in vec3 color;
-
-
 
 out vec3 fragmentColor;
 
-
-
 void main(void)
-
 {
-
 	gl_Position   = projectionMatrix * vec4(position, 1.0);
-
 	fragmentColor = color;
-
 }
-
 }}}
 
 Входные атрибуты обозначены как `in`, а выходные атрибуты как `out`, юниформы обозначаются как `uniform`. Выходные атрибуты предназначены для передачи данных из шейдера на следующий этап обработки данных, в нашем случае следующий этап это фрагментный шейдер:
 {{{
 #version 330 core
 
-
-
 in vec3 fragmentColor;
-
-
 
 out vec4 color;
 
-
-
 void main(void)
-
 {
-
 	color = vec4(fragmentColor, 1.0);
-
 }
-
 }}}
 
 Здесь имеется выходной атрибут `color`, он определяет какого цвета будет пиксель на экране. Стоит также отметить что фрагментный шейдер получает интерполированные данные из предыдущего вершинного шейдера, каким образом данные будут интерполироваться можно указать отдельно для каждого атрибута, по-умолчанию это обычная линейная интерполяция. Таким образом, в случае с атрибутом `fragmentColor`, цвет меняется "линейно" от вершины к вершине.
