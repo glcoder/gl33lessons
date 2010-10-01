@@ -52,17 +52,11 @@ if (glCreateProgram == NULL)
 {{{
 // макрос для получения указателя на функцию и проверка его на валидность
 #define OPENGL_GET_PROC(p,n) \
-
 	n = (p)wglGetProcAddress(#n); \
-
 	if (NULL == n) \
-
 	{ \
-
 		LOG_ERROR("Loading extension '%s' fail (%d)\n", #n, GetLastError()); \
-
 		return false; \
-
 	}
 
 // используется макрос следующим образом
@@ -124,16 +118,16 @@ GLuint shaderProgram, vertexShader, fragmentShader;
 uint8_t  *shaderSource;
 uint32_t sourceLength;
 
-// создадим шейдерную программу и шейдеры для нее
 
+// создадим шейдерную программу и шейдеры для нее
 shaderProgram  = glCreateProgram();
 vertexShader   = glCreateShader(GL_VERTEX_SHADER);
 fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
+
 // загрузим вершинный шейдер
 if (!LoadFile("data/lesson.vs", true, &shaderSource, &sourceLength))
 	return false;
-
 
 // зададим шейдеру исходный код и скомпилируем его
 glShaderSource(vertexShader, 1, (const GLchar**)&shaderSource, (const GLint*)&sourceLength);
@@ -142,17 +136,14 @@ glCompileShader(vertexShader);
 // исходный код шейдера нам больше не нужен
 delete[] shaderSource;
 
-
 // проверим статус компиляции шейдера
 if (ShaderStatus(vertexShader, GL_COMPILE_STATUS) != GL_TRUE)
 	return false;
 
 
-
 // загрузим фрагментный шейдер
 if (!LoadFile("data/lesson.fs", true, &shaderSource, &sourceLength))
 	return false;
-
 
 // зададим шейдеру исходный код и скомпилируем его
 glShaderSource(fragmentShader, 1, (const GLchar**)&shaderSource, (const GLint*)&sourceLength);
@@ -161,28 +152,21 @@ glCompileShader(fragmentShader);
 // исходный код шейдера нам больше не нужен
 delete[] shaderSource;
 
-
 // проверим статус компиляции шейдера
 if (ShaderStatus(fragmentShader, GL_COMPILE_STATUS) != GL_TRUE)
 	return false;
-
 
 
 // присоединим загруженные шейдеры к шейдерной программе
 glAttachShader(shaderProgram, vertexShader);
 glAttachShader(shaderProgram, fragmentShader);
 
-
-
 // сборка шейдерной программы из прикрепленных шейдеров
 glLinkProgram(shaderProgram);
 
-
 // проверим успешна ли сборка шейдерной программы
 if (ShaderProgramStatus(shaderProgram, GL_LINK_STATUS) != GL_TRUE)
-
 	return false;
-
 
 
 // сделаем шейдерную программу активной
@@ -246,7 +230,47 @@ GLint ShaderProgramStatus(GLuint program, GLenum param)
 
 == Вершинный буфер и его описание ==
 
+Для хранения данных о вершинах геометрии в OpenGL существует специальный объект называемый [http://www.opengl.org/registry/specs/ARB/vertex_buffer_object.txt Vertex Buffer Object], коротко VBO. VBO позволяет создать буфер в памяти вдиеокарты и поместить туда необходимые нам данные, при этом возможно создание буфера с подсказкой, как часто мы будем менять данные в этом буфере.
 
+Однако создания одного VBO недостаточно, необходимо создать еще один специальный объект [http://www.opengl.org/registry/specs/ARB/vertex_array_object.txt Vertex Array Object], коротко VAO. VAO хранит связи между параметрами вершинных атрибутов и источниками данных в VBO. В VAO хранится из какого VBO какие атрибуты берутся, тип и размер этих атрибутов, смещение в буфере VBO до начала данных для этих атрибутов. Есть одно исключение - VBO для хранения индексов, к VAO можно присоединить только один такой VBO, но про индексный буфер будет рассказано в отдельном уроке.
+
+Одно из удобств VAO, когда он будет настроен, не надо подключать различные VBO в которых хранятся атрибуты вершин, можно один раз подключить VAO и можно приступать к выводу геометрии.
+
+В этом уроке мы используем VBO для хранения всего трех вершин для нашего треугольника, менять мы их не собираемся, поэтому данные поместим в VBO всего один раз, при инициализации OpenGL, там же создадим VAO:
+{{{
+// количество вершин в нашей геометрии, у нас простой треугольник
+const int vertexCount = 3;
+
+// размер одной вершины меша в байтах - 6 float на позицию и на цвет вершины
+const int vertexSize = 6 * sizeof(float);
+
+// подготовим данные для вывода треугольника, всего 3 вершины
+ по 6 float на каждую
+static const float triangleMesh[vertexCount * 6] = {
+	/* 1 вершина, позиция: */ -1.0f, -1.0f, -2.0f, /* цвет: */ 1.0f, 0.0f, 0.0f,
+	/* 2 вершина, позиция: */  0.0f,  1.0f, -2.0f, /* цвет: */ 0.0f, 1.0f, 0.0f,
+	/* 3 вершина, позиция: */  1.0f, -1.0f, -2.0f, /* цвет: */ 0.0f, 0.0f, 1.0f
+};
+
+
+// переменные для хранения индексов VAO и VBO
+GLuint meshVAO, meshVBO;
+
+// создадим Vertex Array Object (VAO)
+glGenVertexArrays(1, &meshVAO);
+
+// установим созданный VAO как текущий
+glBindVertexArray(meshVAO);
+
+// создадим Vertex Buffer Object (VBO)
+glGenBuffers(1, &meshVBO)
+
+// устанавливаем созданный VBO как текущий
+glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
+
+// заполним VBO данными треугольника
+glBufferData(GL_ARRAY_BUFFER, vertexCount * vertexSize, triangleMesh, GL_STATIC_DRAW);
+}}}
 
 == Передача атрибутов и юниформов в шейдер ==
 
@@ -258,7 +282,38 @@ GLint ShaderProgramStatus(GLuint program, GLenum param)
 
 У атрибутов есть одна особенность - мы можем использовать функцию `glBindAttribLocation` для назначения своих индексов атрибутам прежде чем вызвать функцию `glLinkProgram`. Можно и не устанавливать свои индексы, шейдер это сделает за нас, именно так и сделано в исходных кодах к этому уроку.
 
-Когда шейдерная программа собрана и индексы интересующих нас атрибутов и юниформов получены - можно указать источники данных с которыми будут работать шейдеры.
+Когда шейдерная программа собрана, индексы интересующих нас атрибутов и юниформов получены и в VBO скопированы данные геометрии - можно настроить параметры вершинных атрибутов:
+{{{
+// переменные для хранения индексов атрибутов
+GLint positionLocation, colorLocation;
+
+// смещения данных внутри вершинного буфера
+const int vertexOffsetPosition = 0;
+const int vertexOffsetColor    = 3 * sizeof(float);
+
+
+// получим индекс атрибута 'position' из шейдера
+positionLocation = glGetAttribLocation(shaderProgram, "position");
+if (positionLocation != -1)
+{
+	// укажем параметры доступа вершинного атрибута к VBO
+	glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE,
+		vertexSize, (const GLvoid*)vertexOffsetPosition);
+	// разрешим использование атрибута
+	glEnableVertexAttribArray(positionLocation);
+}
+
+// получим индекс атрибута 'color' из шейдера
+colorLocation = glGetAttribLocation(shaderProgram, "color");
+if (colorLocation != -1)
+{
+	// укажем параметры доступа вершинного атрибута к VBO
+	glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE,
+		vertexSize, (const GLvoid*)vertexOffsetColor);
+	// разрешим использование атрибута
+	glEnableVertexAttribArray(colorLocation);
+}
+}}}
 
 == Матрицы ==
 
@@ -280,4 +335,50 @@ void Matrix4Perspective(float *M, float fovy, float aspect, float znear, float z
 }
 }}}
 
-В итоге в массиве `M` у нас будет готовая перспективная матрица. Именно эту матрицу мы будем передавать в шейдер как юниформ `projectionMatrix` (см. код вершинного шейдера выше).
+В итоге в массиве `M` у нас будет готовая перспективная матрица. Именно эту матрицу мы будем передавать в шейдер как юниформ `projectionMatrix`:
+{{{
+// массив с перспективной матрицей проекции
+float projectionMatrix[16];
+
+
+// переменная для хранения индекса юниформа
+GLint projectionMatrixLocation;
+
+// кожффициент отношения сторон окна OpenGL
+const float aspectRatio = (float)window->width / (float)window->height;
+
+// создадим перспективную матрицу проекции
+Matrix4Perspective(projectionMatrix, 45.0f, aspectRatio, 0.5f, 5.0f);
+
+// получим индекс юниформа projectionMatrix из шейдерной программы
+projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
+
+// передадим в шейдер матрицу
+if (projectionMatrixLocation != -1)
+    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix);
+}}}
+
+== Рисование треугольника ==
+
+Наконец мы подошли к последнему шагу нашего урока - вывод треугольника на экран. Совместив все предыдущие занния мы можем создать шейдер, загрузить его, установить нужные параметры, скопировать данные геометрии в буфер видеокарты, установить матрицу и наконец приступать к рендерингу треугольника:
+{{{
+// очистим буфер цвета и глубины
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+// делаем шейдерную программу активной
+glUseProgram(shaderProgram);
+
+// для рендеринга исопльзуем VAO
+glBindVertexArray(meshVAO);
+
+// рендер треугольника из VBO привязанного к VAO
+glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+}}}
+
+== Полезные ссылки ==
+
+== Исходный код ==
+
+Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
+  * Используя SVN [http://code.google.com/p/gl33lessons/source/browse/#svn/branches/lesson02 lesson02]
+  * Скачав архив [http://code.google.com/p/gl33lessons/downloads/detail?name=lesson02.zip lesson02.zip]
