@@ -380,8 +380,8 @@ LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_MBUTTONDOWN:
 		case WM_MBUTTONUP:
 		{
-			g_input.cursorPos[0] = (int16_t)LOWORD(lParam);
-			g_input.cursorPos[1] = (int16_t)HIWORD(lParam);
+			g_input.cursorPos[0] = (int)LOWORD(lParam);
+			g_input.cursorPos[1] = (int)HIWORD(lParam);
 
 			if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP)
 				g_input.buttonState[0] = (msg == WM_LBUTTONDOWN ? INPUT_PRESSED : INPUT_UP);
@@ -397,8 +397,8 @@ LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_MOUSEMOVE:
 		{
-			g_input.cursorPos[0] = (int16_t)LOWORD(lParam);
-			g_input.cursorPos[1] = (int16_t)HIWORD(lParam);
+			g_input.cursorPos[0] = (int)LOWORD(lParam);
+			g_input.cursorPos[1] = (int)HIWORD(lParam);
 
 			return FALSE;
 		}
@@ -501,7 +501,7 @@ bool InputIsButtonClick(uint8_t button)
 	return pressed;
 }
 
-void InputGetCursorPos(int16_t *x, int16_t *y)
+void InputGetCursorPos(int *x, int *y)
 {
 	ASSERT(x);
 	ASSERT(y);
@@ -510,7 +510,7 @@ void InputGetCursorPos(int16_t *x, int16_t *y)
 	*y = g_input.cursorPos[1];
 }
 
-void InputSetCursorPos(int16_t x, int16_t y)
+void InputSetCursorPos(int x, int y)
 {
 	POINT pos = {x, y};
 	ClientToScreen(g_hWnd, &pos);

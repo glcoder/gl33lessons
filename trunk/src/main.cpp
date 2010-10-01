@@ -4,29 +4,50 @@
 #include "common.h"
 #include "OpenGL.h"
 #include "GLWindow.h"
-
-// количество вершин в нашей геометрии, у нас простой треугольник
-static const int MESH_VERTEX_COUNT = 3;
-
-// размер одной вершины меша в байтах - 6 float на позицию и на цвет вершины
-static const int VERTEX_SIZE = 6 * sizeof(float);
-
-// смещения данных внутри вершины
-static const int VERTEX_POSITION_OFFSET = 0;
-static const int VERTEX_COLOR_OFFSET    = 3 * sizeof(float);
+#include "Texture.h"
 
 // пременные для хранения идентификаторов шейдерной программы и шейдеров
-static GLuint shaderProgram = 0, vertexShader = 0, fragmentShader = 0;
+static GLuint shaderProgram = 0, vertexShader = 0, fragmentShader = 0, colorTexture = 0;
 
-// переменные для хранения идентификаторов VAO и VBO
-static GLuint meshVAO = 0, meshVBO = 0;
+// Cube mesh
+namespace Cube
+{
+	static GLuint VBO[3], VAO;
 
-// подготовим данные для вывода треугольника, всего 3 вершины
-static const float triangleMesh[MESH_VERTEX_COUNT * 6] = {
-	/* 1 вершина, позиция: */ -1.0f, -1.0f, -2.0f, /* цвет: */ 1.0f, 0.0f, 0.0f,
-	/* 2 вершина, позиция: */  0.0f,  1.0f, -2.0f, /* цвет: */ 0.0f, 1.0f, 0.0f,
-	/* 3 вершина, позиция: */  1.0f, -1.0f, -2.0f, /* цвет: */ 0.0f, 0.0f, 1.0f
-};
+	static const uint32_t verticesCount = 24;
+	static const uint32_t indicesCount  = 36;
+	static const float    s             = 1.0f;
+
+	// vertices
+	static const float positions[verticesCount][3] = {
+		{-s, s, s}, { s, s, s}, { s,-s, s}, {-s,-s, s}, // front
+		{ s, s,-s}, {-s, s,-s}, {-s,-s,-s}, { s,-s,-s}, // back
+		{-s, s,-s}, { s, s,-s}, { s, s, s}, {-s, s, s}, // top
+		{ s,-s,-s}, {-s,-s,-s}, {-s,-s, s}, { s,-s, s}, // bottom
+		{-s, s,-s}, {-s, s, s}, {-s,-s, s}, {-s,-s,-s}, // left
+		{ s, s, s}, { s, s,-s}, { s,-s,-s}, { s,-s, s}  // right
+	};
+
+	// texcoords
+	static const float texcoords[verticesCount][2] = {
+		{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // front
+		{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // back
+		{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // top
+		{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // bottom
+		{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // left
+		{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}  // right
+	};
+
+	// indices in CCW order
+	static const uint32_t indices[indicesCount] = {
+		 0, 3, 1,  1, 3, 2, // front
+		 4, 7, 5,  5, 7, 6, // back
+		 8,11, 9,  9,11,10, // top
+		12,15,13, 13,15,14, // bottom
+		16,19,17, 17,19,18, // left
+		20,23,21, 21,23,22  // right
+	};
+}
 
 // построение перспективной матрицы
 static void Matrix4Perspective(float *M, float fovy, float aspect, float znear, float zfar)
@@ -41,6 +62,45 @@ static void Matrix4Perspective(float *M, float fovy, float aspect, float znear, 
 	M[12] = 0;          M[13] =  0; M[14] = -1; M[15] =  0;
 }
 
+static void Matrix4Ident(float *M)
+{
+	M[0] = M[5] = M[10] = M[15] = 1.0f; 
+	M[1] = M[2] = M[3] = M[4] = M[6] = M[7] = M[8] =
+		M[9] = M[11] = M[12] = M[13] = M[14] = 0.0f;
+}
+
+static void Matrix4Translation(float *M, float x, float y, float z)
+{
+	Matrix4Ident(M);
+
+	M[ 3] = x;
+	M[ 7] = y;
+	M[11] = z;
+}
+
+static void Matrix4Rotation(float *M, float ax, float ay, float az)
+{
+	float A = cosf(ax), B = sinf(ax), C = cosf(ay),
+	      D = sinf(ay), E = cosf(az), F = sinf(az);
+	float AD = A * D, BD = B * D;
+
+	Matrix4Ident(M);
+
+	M[ 0] =   C * E;
+	M[ 1] =  -C * F;
+	M[ 2] =  -D;
+	M[ 4] = -BD * E + A * F;
+	M[ 5] =  BD * F + A * E;
+	M[ 6] =  -B * C;
+	M[ 8] =  AD * E + B * F;
+	M[ 9] = -AD * F + B * E;
+	M[10] =   A * C;
+}
+
+float modelMatrix[16], viewMatrix[16], projectionMatrix[16];
+GLint positionLocation, texcoordLocation, modelMatrixLocation, 
+	viewMatrixLocation, projectionMatrixLocation, colorTextureLocation;
+
 // инициализаця OpenGL
 bool GLWindowInit(const GLWindow *window)
 {
@@ -49,15 +109,18 @@ bool GLWindowInit(const GLWindow *window)
 	uint8_t  *shaderSource;
 	uint32_t sourceLength;
 
-	float projectionMatrix[16];
-	GLint projectionMatrixLocation, positionLocation, colorLocation;
-
 	// устанавливаем вьюпорт на все окно
 	glViewport(0, 0, window->width, window->height);
 
 	// параметры OpenGL
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	glActiveTexture(GL_TEXTURE0);
+	if ((colorTexture = TextureCreateFromTGA("data/texture.tga")) == 0)
+		return false;
 
 	// создадим шейдерную программу и шейдеры для нее
 	shaderProgram  = glCreateProgram();
@@ -108,13 +171,22 @@ bool GLWindowInit(const GLWindow *window)
 	glUseProgram(shaderProgram);
 
 	// создадим перспективную матрицу
-	Matrix4Perspective(projectionMatrix, 45.0f,
-		(float)window->width / (float)window->height, 0.5f, 5.0f);
+	float aspectRatio = (float)window->width / (float)window->height;
+	Matrix4Perspective(projectionMatrix, 45.0f, aspectRatio, 1.0f, 6.0f);
+	Matrix4Rotation(modelMatrix, 0.0f, 0.0f, 0.0f);
+	Matrix4Translation(viewMatrix, 0.0f, 0.0f, -5.0f);
 
-	projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
-
-	if (projectionMatrixLocation != -1)
+	if ((projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix")) != -1)
 		glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix);
+
+	if ((modelMatrixLocation = glGetUniformLocation(shaderProgram, "modelMatrix")) != -1)
+		glUniformMatrix4fv(modelMatrixLocation, 1, GL_TRUE, modelMatrix);
+
+	if ((viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix")) != -1)
+		glUniformMatrix4fv(viewMatrixLocation, 1, GL_TRUE, viewMatrix);
+
+	if ((colorTextureLocation = glGetUniformLocation(shaderProgram, "colorTexture")) != -1)
+		glUniform1i(colorTextureLocation, 0);
 
 	// проверка на корректность шейдерной программы
 	glValidateProgram(shaderProgram);
@@ -125,38 +197,36 @@ bool GLWindowInit(const GLWindow *window)
 	OPENGL_CHECK_FOR_ERRORS();
 
 	// создадим и используем Vertex Array Object (VAO)
-	glGenVertexArrays(1, &meshVAO);
-	glBindVertexArray(meshVAO);
+	glGenVertexArrays(1, &Cube::VAO);
+	glBindVertexArray(Cube::VAO);
 
-	// создадим и используем Vertex Buffer Object (VBO)
-	glGenBuffers(1, &meshVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
+	glGenBuffers(3, Cube::VBO);
 
-	// заполним VBO данными треугольника
-	glBufferData(GL_ARRAY_BUFFER, MESH_VERTEX_COUNT * VERTEX_SIZE,
-		triangleMesh, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, Cube::VBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, Cube::verticesCount * (3 * sizeof(float)),
+		Cube::positions, GL_STATIC_DRAW);
 
-	// получим позицию атрибута 'position' из шейдера
 	positionLocation = glGetAttribLocation(shaderProgram, "position");
 	if (positionLocation != -1)
 	{
-		// назначим на атрибут параметры доступа к VBO
-		glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE,
-			VERTEX_SIZE, (const GLvoid*)VERTEX_POSITION_OFFSET);
-		// разрешим использование атрибута
+		glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 		glEnableVertexAttribArray(positionLocation);
 	}
 
-	// получим позицию атрибута 'color' из шейдера
-	colorLocation = glGetAttribLocation(shaderProgram, "color");
-	if (colorLocation != -1)
+	glBindBuffer(GL_ARRAY_BUFFER, Cube::VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, Cube::verticesCount * (2 * sizeof(float)),
+		Cube::texcoords, GL_STATIC_DRAW);
+
+	texcoordLocation = glGetAttribLocation(shaderProgram, "texcoord");
+	if (texcoordLocation != -1)
 	{
-		// назначим на атрибут параметры доступа к VBO
-		glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE,
-			VERTEX_SIZE, (const GLvoid*)VERTEX_COLOR_OFFSET);
-		// разрешим использование атрибута
-		glEnableVertexAttribArray(colorLocation);
+		glVertexAttribPointer(texcoordLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+		glEnableVertexAttribArray(texcoordLocation);
 	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Cube::VBO[2]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, Cube::indicesCount * sizeof(uint32_t),
+		Cube::indices, GL_STATIC_DRAW);
 
 	OPENGL_CHECK_FOR_ERRORS();
 
@@ -168,18 +238,19 @@ void GLWindowClear(const GLWindow *window)
 {
 	ASSERT(window);
 
-	// удаляем VAO и VBO
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDeleteBuffers(1, &meshVBO);
+	glDeleteBuffers(3, Cube::VBO);
 
 	glBindVertexArray(0);
-	glDeleteVertexArrays(1, &meshVAO);
+	glDeleteVertexArrays(1, &Cube::VAO);
 
 	glUseProgram(0);
 	glDeleteProgram(shaderProgram);
-
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
+
+	glDeleteTextures(1, &colorTexture);
 }
 
 // функция рендера
@@ -187,32 +258,51 @@ void GLWindowRender(const GLWindow *window)
 {
 	ASSERT(window);
 
-	// очистим буфер цвета и глубины
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// делаем шейдерную программу активной
 	glUseProgram(shaderProgram);
-
-	// для рендеринга исопльзуем VAO
-	glBindVertexArray(meshVAO);
-	// рендер треугольника из VBO привязанного к VAO
-	glDrawArrays(GL_TRIANGLES, 0, MESH_VERTEX_COUNT);
+	glBindVertexArray(Cube::VAO);
+	glDrawElements(GL_TRIANGLES, Cube::indicesCount, GL_UNSIGNED_INT, NULL);
 
 	// проверка на ошибки
 	OPENGL_CHECK_FOR_ERRORS();
 }
+
+static int cursorPos[2] = {0,0}, cursorDelta[2] = {0,0};
+static float xRotation = 0.0f, yRotation = 0.0f;
 
 // функция обновления
 void GLWindowUpdate(const GLWindow *window, double deltaTime)
 {
 	ASSERT(window);
 	ASSERT(deltaTime >= 0.0); // проверка на возможность бага
+
+	xRotation += (float)deltaTime * cursorDelta[1];
+	yRotation += (float)deltaTime * cursorDelta[0];
+	cursorDelta[0] = cursorDelta[1] = 0;
+
+	Matrix4Rotation(modelMatrix, xRotation, yRotation, 0.0f);
+
+	if (modelMatrixLocation != -1)
+		glUniformMatrix4fv(modelMatrixLocation, 1, GL_TRUE, modelMatrix);
 }
 
 // функция обработки ввода с клавиатуры и мыши
 void GLWindowInput(const GLWindow *window)
 {
 	ASSERT(window);
+
+	int xCenter = window->width / 2, yCenter = window->height / 2;
+
+	InputGetCursorPos(cursorPos, cursorPos + 1);
+
+	if (InputIsButtonDown(0))
+	{
+		cursorDelta[0] += 10 * (xCenter - cursorPos[0]);
+		cursorDelta[1] += 10 * (cursorPos[1] - yCenter);
+	}
+
+	InputSetCursorPos(xCenter, yCenter);
 
 	// выход из приложения по кнопке Esc
 	if (InputIsKeyPressed(VK_ESCAPE))
@@ -228,9 +318,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	int result;
 
-	LoggerCreate("lesson02.log");
+	LoggerCreate("lesson03.log");
 
-	if (!GLWindowCreate("lesson02", 800, 600, false))
+	if (!GLWindowCreate("lesson03", 800, 600, false))
 		return 1;
 
 	result = GLWindowMainLoop();
