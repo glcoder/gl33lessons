@@ -40,6 +40,8 @@ GLint ShaderStatus(GLuint shader, GLenum param)
 
 bool OpenGLInitExtensions()
 {
+	// Texture
+	OPENGL_GET_PROC(PFNGLACTIVETEXTUREPROC, glActiveTexture);
 	// VAO
 	OPENGL_GET_PROC(PFNGLGENVERTEXARRAYSPROC,    glGenVertexArrays);
 	OPENGL_GET_PROC(PFNGLDELETEVERTEXARRAYSPROC, glDeleteVertexArrays);
@@ -74,12 +76,16 @@ bool OpenGLInitExtensions()
 	// Shaders uniforms
 	OPENGL_GET_PROC(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation);
 	OPENGL_GET_PROC(PFNGLUNIFORMMATRIX4FVPROC,   glUniformMatrix4fv);
+	OPENGL_GET_PROC(PFNGLUNIFORM1IPROC,          glUniform1i);
 
 	OPENGL_CHECK_FOR_ERRORS();
 
 	return true;
 }
+
 // объявим расширения OpenGL
+// Texture
+PFNGLACTIVETEXTUREPROC glActiveTexture = NULL;
 // VAO
 PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays    = NULL;
 PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays = NULL;
@@ -114,4 +120,4 @@ PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray = NULL;
 // Shaders uniforms
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
 PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv   = NULL;
-
+PFNGLUNIFORM1IPROC          glUniform1i          = NULL;

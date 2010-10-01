@@ -37,6 +37,8 @@ GLint ShaderProgramStatus(GLuint program, GLenum param);
 GLint ShaderStatus(GLuint shader, GLenum param);
 
 // расширения OpenGL
+// Texture
+extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 // VAO
 extern PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays;
 extern PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
@@ -71,5 +73,6 @@ extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
 // Shaders uniforms
 extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
 extern PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv;
+extern PFNGLUNIFORM1IPROC          glUniform1i;
 
 #endif /* OPENGL_H */
