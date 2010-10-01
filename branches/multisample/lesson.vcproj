@@ -70,7 +70,7 @@
 				Name="VCLinkerTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalDependencies="opengl32.lib"
-				OutputFile="lesson01.exe"
+				OutputFile="lesson03.exe"
 				LinkIncremental="1"
 				GenerateManifest="false"
 				ManifestFile="build\lesson.manifest"
@@ -117,6 +117,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\src\common.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\common.h"
 				>
 			</File>
@@ -146,6 +150,14 @@
 			</File>
 			<File
 				RelativePath=".\src\OpenGL.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Texture.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Texture.h"
 				>
 			</File>
 		</Filter>
