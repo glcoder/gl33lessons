@@ -185,7 +185,7 @@ if (ShaderProgramStatus(shaderProgram, GL_VALIDATE_STATUS) != GL_TRUE)
 
 Для проверки статусов шейдера и шейдерной программы используется небольшая функция-обертка, которая в случае ошибки выводит текст этой ошибки в лог-файл:
 {{{
-// проверка статуса шейдера указанный в param
+// проверка статуса param шейдера shader
 GLint ShaderStatus(GLuint shader, GLenum param)
 {
 	GLint status, length;
@@ -208,7 +208,7 @@ GLint ShaderStatus(GLuint shader, GLenum param)
 	return status;
 }
 
-// проверка статуса шейдерной программы указанный в param
+// проверка статуса param шейдерной программы program
 GLint ShaderProgramStatus(GLuint program, GLenum param)
 {
 	GLint status, length;
@@ -232,9 +232,9 @@ GLint ShaderProgramStatus(GLuint program, GLenum param)
 }
 }}}
 
-== Вершинный буфер ==
+== Вершинный буфер и его связь с вершинными атрибутами ==
 
-Для хранения данных о вершинах геометрии в OpenGL существует специальный объект называемый [http://www.opengl.org/registry/specs/ARB/vertex_buffer_object.txt Vertex Buffer Object], коротко VBO. VBO позволяет создать буфер в памяти вдиеокарты и поместить туда необходимые нам данные, при этом возможно создание буфера с подсказкой, как часто мы будем менять данные в этом буфере.
+Для хранения данных о вершинах геометрии в OpenGL существует специальный объект называемый [http://www.opengl.org/registry/specs/ARB/vertex_buffer_object.txt Vertex Buffer Object], коротко VBO. VBO позволяет создать буфер в памяти вдиеокарты и поместить туда необходимые нам данные. Вершинный буфер создается с подсказкой, как часто мы будем менять данные в этом буфере.
 
 Однако создания одного VBO недостаточно, необходимо создать еще один специальный объект [http://www.opengl.org/registry/specs/ARB/vertex_array_object.txt Vertex Array Object], коротко VAO. VAO хранит связи между параметрами вершинных атрибутов и источниками данных в VBO. В VAO хранится из какого VBO какие атрибуты берутся, тип и размер этих атрибутов, смещение в буфере VBO до начала данных для этих атрибутов. Есть одно исключение - VBO для хранения индексов, к VAO можно присоединить только один такой VBO, но про индексный буфер будет рассказано в отдельном уроке.
 
