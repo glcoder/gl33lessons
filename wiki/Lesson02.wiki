@@ -88,7 +88,9 @@ out vec3 fragmentColor;
 
 void main(void)
 {
+	// перевод вершинных координат в однородные
 	gl_Position   = projectionMatrix * vec4(position, 1.0);
+	// передаем цвет вершины в фрагментный шейдер
 	fragmentColor = color;
 }
 }}}
@@ -103,6 +105,7 @@ out vec4 color;
 
 void main(void)
 {
+	// зададим цвет пикселя
 	color = vec4(fragmentColor, 1.0);
 }
 }}}
@@ -113,11 +116,12 @@ void main(void)
 
 Полностью создание шейдерной программы происходит следующим образом:
 {{{
+// переменные для хранения индекса шейдерной программы и шейдеров
 GLuint shaderProgram, vertexShader, fragmentShader;
 
+// переменные для хранения загруженных файлов
 uint8_t  *shaderSource;
 uint32_t sourceLength;
-
 
 // создадим шейдерную программу и шейдеры для нее
 shaderProgram  = glCreateProgram();
@@ -252,9 +256,9 @@ static const float triangleMesh[vertexCount * 6] = {
 	/* 3 вершина, позиция: */  1.0f, -1.0f, -2.0f, /* цвет: */ 0.0f, 0.0f, 1.0f
 };
 
-
 // переменные для хранения индексов VAO и VBO
 GLuint meshVAO, meshVBO;
+
 
 // создадим Vertex Array Object (VAO)
 glGenVertexArrays(1, &meshVAO);
@@ -319,7 +323,7 @@ if (colorLocation != -1)
 
 В данном уроке нам понадобится только одна матрица - перспективная матрица проекции. Она нам необходима, чтобы переводить позиции вершин в однородные координаты (clip space). Раньше установка матрицы проекции делалась достаточно просто, сначала мы говорили, что хотим поменять матрицу проекции командой `glMatrixMode(GL_PROJECTION)`, а потом указывали параметры матрицы проекции, например для создания перспективной матрицы проекции использовалась функция `gluPerspective(fov, aspect, znear, zfar)`.
 
-В OpenGL версии 3.0 и выше отменили работу со стеком матриц, теперь необходимо вручную создавать матрицы и передавать их в шейдер для дальнейшего использования. Создать матрицу подобную той, что делает `gluPerspective` несложно:
+В OpenGL версии 3.0 и выше отменили работу со стеком матриц OpenGL, теперь необходимо вручную создавать матрицы и передавать их в шейдер для дальнейшего использования. Создать матрицу, подобную той что делает `gluPerspective`, просто:
 {{{
 // построение перспективной матрицы проекции
 void Matrix4Perspective(float *M, float fovy, float aspect, float znear, float zfar)
@@ -337,9 +341,8 @@ void Matrix4Perspective(float *M, float fovy, float aspect, float znear, float z
 
 В итоге в массиве `M` у нас будет готовая перспективная матрица. Именно эту матрицу мы будем передавать в шейдер как юниформ `projectionMatrix`:
 {{{
-// массив с перспективной матрицей проекции
+// массив для хранения перспективной матрици проекции
 float projectionMatrix[16];
-
 
 // переменная для хранения индекса юниформа
 GLint projectionMatrixLocation;
@@ -347,13 +350,14 @@ GLint projectionMatrixLocation;
 // кожффициент отношения сторон окна OpenGL
 const float aspectRatio = (float)window->width / (float)window->height;
 
+
 // создадим перспективную матрицу проекции
 Matrix4Perspective(projectionMatrix, 45.0f, aspectRatio, 0.5f, 5.0f);
 
 // получим индекс юниформа projectionMatrix из шейдерной программы
 projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
 
-// передадим в шейдер матрицу
+// передадим матрицу в шейдер
 if (projectionMatrixLocation != -1)
     glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix);
 }}}
