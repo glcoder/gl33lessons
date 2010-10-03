@@ -2,12 +2,22 @@
 #include <windows.h>
 
 #include "common.h"
+#include "math3d/math3d.h"
 #include "OpenGL.h"
 #include "GLWindow.h"
 #include "Texture.h"
 
 // пременные для хранения идентификаторов шейдерной программы и шейдеров
 static GLuint shaderProgram = 0, vertexShader = 0, fragmentShader = 0, colorTexture = 0;
+
+static int    cursorPos[2] = {0,0};
+
+static float  meshRotation[2] = {0.0f, 0.0f}, cursorDelta[2] = {0.0f, 0.0f};
+
+static mat4   modelMatrix(0.0f), viewMatrix(0.0f), projectionMatrix(0.0f);
+
+static GLint  positionLocation = -1, texcoordLocation = -1, modelMatrixLocation = -1, 
+              viewMatrixLocation = -1, projectionMatrixLocation = -1, colorTextureLocation = -1;
 
 // Cube mesh
 namespace Cube
@@ -16,7 +26,7 @@ namespace Cube
 
 	static const uint32_t verticesCount = 24;
 	static const uint32_t indicesCount  = 36;
-	static const float    s             = 1.0f;
+	static const float    s             = 1.0f; // size
 
 	// vertices
 	static const float positions[verticesCount][3] = {
@@ -49,58 +59,6 @@ namespace Cube
 	};
 }
 
-// построение перспективной матрицы
-static void Matrix4Perspective(float *M, float fovy, float aspect, float znear, float zfar)
-{
-	float f = 1 / tanf(fovy / 2),
-	      A = (zfar + znear) / (znear - zfar),
-	      B = (2 * zfar * znear) / (znear - zfar);
-
-	M[ 0] = f / aspect; M[ 1] =  0; M[ 2] =  0; M[ 3] =  0;
-	M[ 4] = 0;          M[ 5] =  f; M[ 6] =  0; M[ 7] =  0;
-	M[ 8] = 0;          M[ 9] =  0; M[10] =  A; M[11] =  B;
-	M[12] = 0;          M[13] =  0; M[14] = -1; M[15] =  0;
-}
-
-static void Matrix4Ident(float *M)
-{
-	M[0] = M[5] = M[10] = M[15] = 1.0f; 
-	M[1] = M[2] = M[3] = M[4] = M[6] = M[7] = M[8] =
-		M[9] = M[11] = M[12] = M[13] = M[14] = 0.0f;
-}
-
-static void Matrix4Translation(float *M, float x, float y, float z)
-{
-	Matrix4Ident(M);
-
-	M[ 3] = x;
-	M[ 7] = y;
-	M[11] = z;
-}
-
-static void Matrix4Rotation(float *M, float ax, float ay, float az)
-{
-	float A = cosf(ax), B = sinf(ax), C = cosf(ay),
-	      D = sinf(ay), E = cosf(az), F = sinf(az);
-	float AD = A * D, BD = B * D;
-
-	Matrix4Ident(M);
-
-	M[ 0] =   C * E;
-	M[ 1] =  -C * F;
-	M[ 2] =  -D;
-	M[ 4] = -BD * E + A * F;
-	M[ 5] =  BD * F + A * E;
-	M[ 6] =  -B * C;
-	M[ 8] =  AD * E + B * F;
-	M[ 9] = -AD * F + B * E;
-	M[10] =   A * C;
-}
-
-float modelMatrix[16], viewMatrix[16], projectionMatrix[16];
-GLint positionLocation, texcoordLocation, modelMatrixLocation, 
-	viewMatrixLocation, projectionMatrixLocation, colorTextureLocation;
-
 // инициализаця OpenGL
 bool GLWindowInit(const GLWindow *window)
 {
@@ -126,6 +84,12 @@ bool GLWindowInit(const GLWindow *window)
 	shaderProgram  = glCreateProgram();
 	vertexShader   = glCreateShader(GL_VERTEX_SHADER);
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+	if (!shaderProgram || !vertexShader || !fragmentShader)
+	{
+		LOG_ERROR("Creating shader program fail (0x%X)\n", (unsigned)glGetError());
+		return false;
+	}
 
 	// загрузим вершинный шейдер
 	if (!LoadFile("data/lesson.vs", true, &shaderSource, &sourceLength))
@@ -172,18 +136,18 @@ bool GLWindowInit(const GLWindow *window)
 
 	// создадим перспективную матрицу
 	float aspectRatio = (float)window->width / (float)window->height;
-	Matrix4Perspective(projectionMatrix, 45.0f, aspectRatio, 1.0f, 6.0f);
-	Matrix4Rotation(modelMatrix, 0.0f, 0.0f, 0.0f);
-	Matrix4Translation(viewMatrix, 0.0f, 0.0f, -5.0f);
+	projectionMatrix  = perspective(45.0f, aspectRatio, 1.0f, 10.0f);
+	modelMatrix       = rotation(0.0f, 0.0f, 0.0f);
+	viewMatrix        = translation(0.0f, 0.0f, -6.0f);
 
 	if ((projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix")) != -1)
-		glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix);
+		glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix.m);
 
 	if ((modelMatrixLocation = glGetUniformLocation(shaderProgram, "modelMatrix")) != -1)
-		glUniformMatrix4fv(modelMatrixLocation, 1, GL_TRUE, modelMatrix);
+		glUniformMatrix4fv(modelMatrixLocation, 1, GL_TRUE, modelMatrix.m);
 
 	if ((viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix")) != -1)
-		glUniformMatrix4fv(viewMatrixLocation, 1, GL_TRUE, viewMatrix);
+		glUniformMatrix4fv(viewMatrixLocation, 1, GL_TRUE, viewMatrix.m);
 
 	if ((colorTextureLocation = glGetUniformLocation(shaderProgram, "colorTexture")) != -1)
 		glUniform1i(colorTextureLocation, 0);
@@ -261,6 +225,10 @@ void GLWindowRender(const GLWindow *window)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(shaderProgram);
+
+	if (modelMatrixLocation != -1)
+		glUniformMatrix4fv(modelMatrixLocation, 1, GL_TRUE, modelMatrix.m);
+
 	glBindVertexArray(Cube::VAO);
 	glDrawElements(GL_TRIANGLES, Cube::indicesCount, GL_UNSIGNED_INT, NULL);
 
@@ -268,23 +236,19 @@ void GLWindowRender(const GLWindow *window)
 	OPENGL_CHECK_FOR_ERRORS();
 }
 
-static int cursorPos[2] = {0,0}, cursorDelta[2] = {0,0};
-static float xRotation = 0.0f, yRotation = 0.0f;
-
 // функция обновления
 void GLWindowUpdate(const GLWindow *window, double deltaTime)
 {
 	ASSERT(window);
 	ASSERT(deltaTime >= 0.0); // проверка на возможность бага
 
-	xRotation += (float)deltaTime * cursorDelta[1];
-	yRotation += (float)deltaTime * cursorDelta[0];
-	cursorDelta[0] = cursorDelta[1] = 0;
+	meshRotation[0] += (float)deltaTime * 0.1f * cursorDelta[1];
+	meshRotation[1] += (float)deltaTime * 0.1f * cursorDelta[0];
 
-	Matrix4Rotation(modelMatrix, xRotation, yRotation, 0.0f);
+	cursorDelta[0] *= 0.995f;
+	cursorDelta[1] *= 0.995f;
 
-	if (modelMatrixLocation != -1)
-		glUniformMatrix4fv(modelMatrixLocation, 1, GL_TRUE, modelMatrix);
+	modelMatrix = rotation(meshRotation[0], meshRotation[1], 0.0f) * translation(0.0f, 0.0f, 2.0f);
 }
 
 // функция обработки ввода с клавиатуры и мыши
@@ -298,8 +262,8 @@ void GLWindowInput(const GLWindow *window)
 
 	if (InputIsButtonDown(0))
 	{
-		cursorDelta[0] += 10 * (xCenter - cursorPos[0]);
-		cursorDelta[1] += 10 * (cursorPos[1] - yCenter);
+		cursorDelta[0] += (float)(xCenter - cursorPos[0]);
+		cursorDelta[1] += (float)(cursorPos[1] - yCenter);
 	}
 
 	InputSetCursorPos(xCenter, yCenter);
