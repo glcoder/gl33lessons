@@ -2,11 +2,13 @@
 
 uniform sampler2D colorTexture;
 
-in vec2 fragmentTexcoord;
+in Fragment {
+	vec2 texcoord;
+} Frag;
 
-out vec4 color;
+layout(location = 0) out vec4 color;
 
 void main(void)
 {
-	color = texture(colorTexture, fragmentTexcoord);
+	color = texture(colorTexture, Frag.texcoord);
 }

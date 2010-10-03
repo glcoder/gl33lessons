@@ -4,6 +4,8 @@ GLenum g_OpenGLError = GL_NO_ERROR;
 
 GLint ShaderProgramStatus(GLuint program, GLenum param)
 {
+	ASSERT(program);
+
 	GLint status, length;
 	GLchar buffer[1024];
 
@@ -22,6 +24,8 @@ GLint ShaderProgramStatus(GLuint program, GLenum param)
 
 GLint ShaderStatus(GLuint shader, GLenum param)
 {
+	ASSERT(shader);
+
 	GLint status, length;
 	GLchar buffer[1024];
 
