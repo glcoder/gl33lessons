@@ -160,22 +160,8 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// выведем в лог немного информации о контексте OpenGL
-	int major, minor;
-	glGetIntegerv(GL_MAJOR_VERSION, &major);
-	glGetIntegerv(GL_MINOR_VERSION, &minor);
-	LOG_DEBUG("OpenGL render context information:\n"
-		"  Renderer       : %s\n"
-		"  Vendor         : %s\n"
-		"  Version        : %s\n"
-		"  GLSL version   : %s\n"
-		"  OpenGL version : %d.%d\n",
-		(const char*)glGetString(GL_RENDERER),
-		(const char*)glGetString(GL_VENDOR),
-		(const char*)glGetString(GL_VERSION),
-		(const char*)glGetString(GL_SHADING_LANGUAGE_VERSION),
-		major, minor
-	);
+	// вывод в лог-файл различной информации по OpenGL
+	OpenGLPrintDebugInfo();
 
 	// попробуем загрузить расширения OpenGL
 	if (!OpenGLInitExtensions())

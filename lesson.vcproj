@@ -153,6 +153,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\Shader.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Shader.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\Texture.cpp"
 				>
 			</File>

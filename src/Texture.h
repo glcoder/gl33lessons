@@ -6,4 +6,6 @@
 
 GLuint TextureCreateFromTGA(const char *fileName);
 
+void TextureDestroy(GLuint texture);
+
 #endif /* TEXTURE_H */
