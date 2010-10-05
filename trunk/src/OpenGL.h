@@ -30,11 +30,8 @@ extern GLenum g_OpenGLError;
 // инициализация необходимых расширений OpenGL
 bool OpenGLInitExtensions();
 
-// проверка статуса шейдерной программы
-GLint ShaderProgramStatus(GLuint program, GLenum param);
-
-// проверка статуса шейдера
-GLint ShaderStatus(GLuint shader, GLenum param);
+// вывод в лог различной информации по OpenGL, версия, константы и т.п.
+void OpenGLPrintDebugInfo();
 
 // расширения OpenGL
 // Texture

@@ -15,8 +15,13 @@ typedef __int16          int16_t;
 typedef unsigned __int16 uint16_t;
 typedef __int32          int32_t;
 typedef unsigned __int32 uint32_t;
+
+// кажется MSVC не знает про snprintf, но там есть _snprintf
+#define snprintf _snprintf
+
 #elif defined(__MINGW32__)
 #include <stdint.h>
+
 #else
 #error You must compile this code with MSVC or MinGW!
 #endif

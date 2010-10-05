@@ -66,3 +66,8 @@ GLuint TextureCreateFromTGA(const char *fileName)
 
 	return texture;
 }
+
+void TextureDestroy(GLuint texture)
+{
+	glDeleteTextures(1, &texture);
+}
