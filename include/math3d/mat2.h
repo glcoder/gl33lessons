@@ -17,11 +17,6 @@ struct mat2
 
 	mat2() {}
 
-	void set(float f)
-	{
-		m[0] = f; m[1] = f;
-		m[2] = f; m[3] = f;
-	}
 	void set(const float *f)
 	{
 		m[0] = f[0]; m[1] = f[1];
@@ -35,14 +30,13 @@ struct mat2
 	}
 	void set(const mat2 &M)
 	{
-		m[0] = M.m[0]; m[1] = M.m[1];
-		m[2] = M.m[2]; m[3] = M.m[3];
+		m[0] = M[0]; m[1] = M[1];
+		m[2] = M[2]; m[3] = M[3];
 	}
 
 	void set(const mat3 &M);
 	void set(const mat4 &M);
 
-	mat2(float f)        { set(f); }
 	mat2(const float *f) { set(f); }
 	mat2(const mat2 &M)  { set(M); }
 	mat2(const mat3 &M)  { set(M); }
@@ -55,7 +49,6 @@ struct mat2
 		    m2, m3);
 	}
 
-	mat2& operator=(float f)       { set(f); return *this; }
 	mat2& operator=(const mat2 &M) { set(M); return *this; }
 	mat2& operator=(const mat3 &M) { set(M); return *this; }
 	mat2& operator=(const mat4 &M) { set(M); return *this; }
@@ -65,20 +58,20 @@ struct mat2
 
 	const mat2 operator+(const mat2 &M) const
 	{
-		return mat2(m[0] + M.m[0], m[1] + M.m[1],
-		            m[2] + M.m[2], m[3] + M.m[3]);
+		return mat2(m[0] + M[0], m[1] + M[1],
+		            m[2] + M[2], m[3] + M[3]);
 	}
 	const mat2 operator-(const mat2 &M) const
 	{
-		return mat2(m[0] - M.m[0], m[1] - M.m[1],
-		            m[2] - M.m[2], m[3] - M.m[3]);
+		return mat2(m[0] - M[0], m[1] - M[1],
+		            m[2] - M[2], m[3] - M[3]);
 	}
 	const mat2 operator*(const mat2 &M) const
 	{
-		return mat2(m[0] * M.m[0] + m[1] * M.m[2],
-		            m[0] * M.m[1] + m[1] * M.m[3],
-		            m[2] * M.m[0] + m[3] * M.m[2],
-		            m[2] * M.m[1] + m[3] * M.m[3]);
+		return mat2(m[0] * M[0] + m[1] * M[2],
+		            m[0] * M[1] + m[1] * M[3],
+		            m[2] * M[0] + m[3] * M[2],
+		            m[2] * M[1] + m[3] * M[3]);
 	}
 	const mat2 operator*(float f) const
 	{
@@ -93,22 +86,22 @@ struct mat2
 
 	mat2& operator+=(const mat2 &M)
 	{
-		m[0] += M.m[0]; m[1] += M.m[1];
-		m[2] += M.m[2]; m[3] += M.m[3];
+		m[0] += M[0]; m[1] += M[1];
+		m[2] += M[2]; m[3] += M[3];
 		return *this;
 	}
 	mat2& operator-=(const mat2 &M)
 	{
-		m[0] -= M.m[0]; m[1] -= M.m[1];
-		m[2] -= M.m[2]; m[3] -= M.m[3];
+		m[0] -= M[0]; m[1] -= M[1];
+		m[2] -= M[2]; m[3] -= M[3];
 		return *this;
 	}
 	mat2& operator*=(const mat2 &M)
 	{
-		set(m[0] * M.m[0] + m[1] * M.m[2],
-		    m[0] * M.m[1] + m[1] * M.m[3],
-		    m[2] * M.m[0] + m[3] * M.m[2],
-		    m[2] * M.m[1] + m[3] * M.m[3]);
+		set(m[0] * M[0] + m[1] * M[2],
+		    m[0] * M[1] + m[1] * M[3],
+		    m[2] * M[0] + m[3] * M[2],
+		    m[2] * M[1] + m[3] * M[3]);
 		return *this;
 	}
 	mat2& operator*=(float f)
@@ -127,21 +120,21 @@ struct mat2
 
 inline float determinant(const mat2 &M)
 {
-	return M.m[0] * M.m[3]
-	     - M.m[1] * M.m[2];
+	return M[0] * M[3]
+	     - M[1] * M[2];
 }
 
 inline const mat2 inverse(const mat2 &M)
 {
 	const float det = 1.0f / determinant(M);
-	return mat2(M.m[3] * det, -M.m[2] * det,
-	           -M.m[1] * det,  M.m[0] * det);
+	return mat2(M[3] * det, -M[2] * det,
+	           -M[1] * det,  M[0] * det);
 }
 
 inline const mat2 transpose(const mat2 &M)
 {
-	return mat2(M.m[0], M.m[2],
-	            M.m[1], M.m[3]);
+	return mat2(M[0], M[2],
+	            M[1], M[3]);
 }
 
 #endif /* MAT2_H */
