@@ -92,9 +92,9 @@ static void Matrix4Rotation(Matrix4 M, float x, float y, float z)
 	            D = sinf(y), E = cosf(z), F = sinf(z);
 	const float AD = A * D, BD = B * D;
 
-	M[ 0] = C * E;           M[ 1] = -C * F;          M[ 2] = -D;     M[ 3] = 0;
-	M[ 4] = -BD * E + A * F; M[ 5] = BD * F + A * E;  M[ 6] = -B * C; M[ 7] = 0;
-	M[ 8] = AD * E + B * F;  M[ 9] = -AD * F + B * E; M[10] = A * C;  M[11] = 0;
+	M[ 0] = C * E;           M[ 1] = -C * F;          M[ 2] = D;      M[ 3] = 0;
+	M[ 4] = BD * E + A * F;  M[ 5] = -BD * F + A * E; M[ 6] = -B * C; M[ 7] = 0;
+	M[ 8] = -AD * E + B * F; M[ 9] = AD * F + B * E;  M[10] = A * C;  M[11] = 0;
 	M[12] = 0;               M[13] = 0;               M[14] = 0;      M[15] = 1;
 }
 
@@ -133,14 +133,15 @@ bool GLWindowInit(const GLWindow *window)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	// делаем активным текстурный юнит 0
-	glActiveTexture(GL_TEXTURE0);
-
 	// создадим и загрузим текстуру
 	colorTexture = TextureCreateFromTGA("data/texture.tga");
 
 	if (!colorTexture)
 		return false;
+
+	// делаем активным текстурный юнит 0 и назначаем на него текстуру
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, colorTexture);
 
 	// создадим и загрузим шейдерную программу
 	shaderProgram = ShaderProgramCreateFromFile("data/lesson", ST_VERTEX | ST_FRAGMENT);

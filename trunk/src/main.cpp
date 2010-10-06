@@ -76,14 +76,15 @@ bool GLWindowInit(const GLWindow *window)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	// делаем активным текстурный юнит 0
-	glActiveTexture(GL_TEXTURE0);
-
 	// создадим и загрузим текстуру
 	colorTexture = TextureCreateFromTGA("data/texture.tga");
 
 	if (!colorTexture)
 		return false;
+
+	// делаем активным текстурный юнит 0 и назначаем на него текстуру
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, colorTexture);
 
 	// создадим и загрузим шейдерную программу
 	shaderProgram = ShaderProgramCreateFromFile("data/lesson", ST_VERTEX | ST_FRAGMENT);
