@@ -21,10 +21,7 @@ struct quat
 
 	quat() {}
 
-	void set(float f)                            { x = f;       y = f;       z = f;       w = f;       }
 	void set(const float *f)                     { x = f[0];    y = f[1];    z = f[2];    w = f[3];    }
-	void set(float x, float y)                   { this->x = x; this->y = y; this->z = 0; this->w = 1; }
-	void set(float x, float y, float z)          { this->x = x; this->y = y; this->z = z; this->w = 1; }
 	void set(float x, float y, float z, float w) { this->x = x; this->y = y; this->z = z; this->w = w; }
 	void set(const quat &q)                      { x = q.x;     y = q.y;     z = q.z;     w = q.w;     }
 
@@ -35,10 +32,7 @@ struct quat
 	void set(const mat3 &M);
 	void set(const mat4 &M);
 
-	quat(float f)                            { set(f);          }
 	quat(const float *f)                     { set(f);          }
-	quat(float x, float y)                   { set(x, y);       }
-	quat(float x, float y, float z)          { set(x, y, z);    }
 	quat(float x, float y, float z, float w) { set(x, y, z, w); }
 	quat(const quat &q)                      { set(q);          }
 	quat(const vec2 &v)                      { set(v);          }
@@ -48,7 +42,6 @@ struct quat
 	quat(const mat3 &M)                      { set(M);          }
 	quat(const mat4 &M)                      { set(M);          }
 
-	quat& operator=(float f)       { set(f); return *this; }
 	quat& operator=(const quat &q) { set(q); return *this; }
 	quat& operator=(const vec2 &v) { set(v); return *this; }
 	quat& operator=(const vec3 &v) { set(v); return *this; }

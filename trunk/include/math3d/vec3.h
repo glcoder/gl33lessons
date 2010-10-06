@@ -21,24 +21,19 @@ struct vec3
 
 	vec3() {}
 
-	void set(float f)                   { x = f;       y = f;       z = f;       }
 	void set(const float *f)            { x = f[0];    y = f[1];    z = f[2];    }
-	void set(float x, float y)          { this->x = x; this->y = y; this->z = 0; }
 	void set(float x, float y, float z) { this->x = x; this->y = y; this->z = z; }
 	void set(const vec3 &v)             { x = v.x;     y = v.y;     z = v.z;     }
 
 	void set(const vec2 &v);
 	void set(const vec4 &v);
 
-	vec3(float f)                   { set(f);       }
 	vec3(const float *f)            { set(f);       }
-	vec3(float x, float y)          { set(x, y);    }
 	vec3(float x, float y, float z) { set(x, y, z); }
 	vec3(const vec3 &v)             { set(v);       }
 	vec3(const vec2 &v)             { set(v);       }
 	vec3(const vec4 &v)             { set(v);       }
 
-	vec3& operator=(float f)       { set(f); return *this; }
 	vec3& operator=(const vec3 &v) { set(v); return *this; }
 	vec3& operator=(const vec2 &v) { set(v); return *this; }
 	vec3& operator=(const vec4 &v) { set(v); return *this; }
@@ -50,15 +45,11 @@ struct vec3
 
 	const vec3 operator+(const vec3 &v) const { return vec3(x + v.x, y + v.y, z + v.z); }
 	const vec3 operator-(const vec3 &v) const { return vec3(x - v.x, y - v.y, z - v.z); }
-	const vec3 operator+(float f)       const { return vec3(x + f,   y + f,   z + f);   }
-	const vec3 operator-(float f)       const { return vec3(x - f,   y - f,   z - f);   }
 	const vec3 operator*(float f)       const { return vec3(x * f,   y * f,   z * f);   }
 	const vec3 operator/(float f)       const { return vec3(x / f,   y / f,   z / f);   }
 
 	vec3& operator+=(const vec3 &v) { x += v.x; y += v.y; z += v.z; return *this; }
 	vec3& operator-=(const vec3 &v) { x -= v.x; y -= v.y; z -= v.z; return *this; }
-	vec3& operator+=(float f)       { x += f;   y += f;   z += f;   return *this; }
-	vec3& operator-=(float f)       { x -= f;   y -= f;   z -= f;   return *this; }
 	vec3& operator*=(float f)       { x *= f;   y *= f;   z *= f;   return *this; }
 	vec3& operator/=(float f)       { x /= f;   y /= f;   z /= f;   return *this; }
 };

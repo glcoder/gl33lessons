@@ -21,22 +21,19 @@ struct vec2
 
 	vec2() {}
 
-	void set(float f)                   { x = f;       y = f;       }
-	void set(const float *f)            { x = f[0];    y = f[1];    }
-	void set(float x, float y)          { this->x = x; this->y = y; }
-	void set(const vec2 &v)             { x = v.x;     y = v.y;     }
+	void set(const float *f)   { x = f[0];    y = f[1];    }
+	void set(float x, float y) { this->x = x; this->y = y; }
+	void set(const vec2 &v)    { x = v.x;     y = v.y;     }
 
 	void set(const vec3 &v);
 	void set(const vec4 &v);
 
-	vec2(float f)          { set(f);    }
 	vec2(const float *f)   { set(f);    }
 	vec2(float x, float y) { set(x, y); }
 	vec2(const vec2 &v)    { set(v);    }
 	vec2(const vec3 &v)    { set(v);    }
 	vec2(const vec4 &v)    { set(v);    }
 
-	vec2& operator=(float f)       { set(f); return *this; }
 	vec2& operator=(const vec2 &v) { set(v); return *this; }
 	vec2& operator=(const vec3 &v) { set(v); return *this; }
 	vec2& operator=(const vec4 &v) { set(v); return *this; }
@@ -48,15 +45,11 @@ struct vec2
 
 	const vec2 operator+(const vec2 &v) const { return vec2(x + v.x, y + v.y); }
 	const vec2 operator-(const vec2 &v) const { return vec2(x - v.x, y - v.y); }
-	const vec2 operator+(float f)       const { return vec2(x + f,   y + f);   }
-	const vec2 operator-(float f)       const { return vec2(x - f,   y - f);   }
 	const vec2 operator*(float f)       const { return vec2(x * f,   y * f);   }
 	const vec2 operator/(float f)       const { return vec2(x / f,   y / f);   }
 
 	vec2& operator+=(const vec2 &v) { x += v.x; y += v.y; return *this; }
 	vec2& operator-=(const vec2 &v) { x -= v.x; y -= v.y; return *this; }
-	vec2& operator+=(float f)       { x += f;   y += f;   return *this; }
-	vec2& operator-=(float f)       { x -= f;   y -= f;   return *this; }
 	vec2& operator*=(float f)       { x *= f;   y *= f;   return *this; }
 	vec2& operator/=(float f)       { x /= f;   y /= f;   return *this; }
 };

@@ -15,10 +15,11 @@ static GLuint shaderProgram = 0, colorTexture = 0;
 static int cursorPos[2] = {0,0}, cursorDelta[2] = {0,0};
 
 // для хранения двух углов поворота куба
-static float  cubeRotation[2] = {0.0f, 0.0f};
+static float cubeRotation[2] = {0.0f, 0.0f};
 
 // матрицы преобразования
-static mat4  modelViewProjectionMatrix, viewMatrix, projectionMatrix;
+static mat4 modelViewProjectionMatrix(mat4_identity), viewMatrix(mat4_identity),
+            projectionMatrix(mat4_identity), viewProjectionMatrix(mat4_identity);
 
 // индексы текстуры и матрицы в шейдерной программе
 static GLint colorTextureLocation = -1, modelViewProjectionMatrixLocation = -1;
@@ -105,6 +106,8 @@ bool GLWindowInit(const GLWindow *window)
 
 	// с помощью видовой матрицы отодвинем сцену назад
 	viewMatrix = translation(0.0f, 0.0f, -4.0f);
+
+	viewProjectionMatrix = projectionMatrix * viewMatrix;
 
 	// получим индекс матрицы из шейдерной программы
 	modelViewProjectionMatrixLocation = glGetUniformLocation(shaderProgram, "modelViewProjectionMatrix");
@@ -219,7 +222,7 @@ void GLWindowUpdate(const GLWindow *window, double deltaTime)
 	cursorDelta[0] = cursorDelta[1] = 0;
 
 	// рассчитаем матрицу преобразования координат вершин куба
-	modelViewProjectionMatrix = projectionMatrix * viewMatrix
+	modelViewProjectionMatrix = viewProjectionMatrix
 		* rotation(cubeRotation[0], cubeRotation[1], 0.0f);
 }
 
@@ -238,7 +241,7 @@ void GLWindowInput(const GLWindow *window)
 	if (InputIsButtonDown(0))
 	{
 		// получим смещение курсора мыши с последнего кадра
-		cursorDelta[0] += xCenter - cursorPos[0];
+		cursorDelta[0] += cursorPos[0] - xCenter;
 		cursorDelta[1] += cursorPos[1] - yCenter;
 	}
 

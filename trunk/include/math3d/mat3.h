@@ -17,12 +17,6 @@ struct mat3
 
 	mat3() {}
 
-	void set(float f)
-	{
-		m[0] = f; m[1] = f; m[2] = f;
-		m[3] = f; m[4] = f; m[5] = f;
-		m[6] = f; m[7] = f; m[8] = f;
-	}
 	void set(const float *f)
 	{
 		m[0] = f[0]; m[1] = f[1]; m[2] = f[2];
@@ -39,16 +33,15 @@ struct mat3
 	}
 	void set(const mat3 &M)
 	{
-		m[0] = M.m[0]; m[1] = M.m[1]; m[2] = M.m[2];
-		m[3] = M.m[3]; m[4] = M.m[4]; m[5] = M.m[5];
-		m[6] = M.m[6]; m[7] = M.m[7]; m[8] = M.m[8];
+		m[0] = M[0]; m[1] = M[1]; m[2] = M[2];
+		m[3] = M[3]; m[4] = M[4]; m[5] = M[5];
+		m[6] = M[6]; m[7] = M[7]; m[8] = M[8];
 	}
 
 	void set(const mat2 &M);
 	void set(const mat4 &M);
 	void set(const quat &q);
 
-	mat3(float f)        { set(f); }
 	mat3(const float *f) { set(f); }
 	mat3(const mat3 &M)  { set(M); }
 	mat3(const mat2 &M)  { set(M); }
@@ -64,7 +57,6 @@ struct mat3
 		    m6, m7, m8);
 	}
 
-	mat3& operator=(float f)       { set(f); return *this; }
 	mat3& operator=(const mat3 &M) { set(M); return *this; }
 	mat3& operator=(const mat2 &M) { set(M); return *this; }
 	mat3& operator=(const mat4 &M) { set(M); return *this; }
@@ -75,27 +67,27 @@ struct mat3
 
 	const mat3 operator+(const mat3 &M) const
 	{
-		return mat3(m[0] + M.m[0], m[1] + M.m[1], m[2] + M.m[2],
-		            m[3] + M.m[3], m[4] + M.m[4], m[5] + M.m[5],
-		            m[6] + M.m[6], m[7] + M.m[7], m[8] + M.m[8]);
+		return mat3(m[0] + M[0], m[1] + M[1], m[2] + M[2],
+		            m[3] + M[3], m[4] + M[4], m[5] + M[5],
+		            m[6] + M[6], m[7] + M[7], m[8] + M[8]);
 	}
 	const mat3 operator-(const mat3 &M) const
 	{
-		return mat3(m[0] - M.m[0], m[1] - M.m[1], m[2] - M.m[2],
-		            m[3] - M.m[3], m[4] - M.m[4], m[5] - M.m[5],
-		            m[6] - M.m[6], m[7] - M.m[7], m[8] - M.m[8]);
+		return mat3(m[0] - M[0], m[1] - M[1], m[2] - M[2],
+		            m[3] - M[3], m[4] - M[4], m[5] - M[5],
+		            m[6] - M[6], m[7] - M[7], m[8] - M[8]);
 	}
 	const mat3 operator*(const mat3 &M) const
 	{
-		return mat3(m[0] * M.m[0] + m[1] * M.m[3] + m[2] * M.m[6],
-		            m[0] * M.m[1] + m[1] * M.m[4] + m[2] * M.m[7],
-		            m[0] * M.m[2] + m[1] * M.m[5] + m[2] * M.m[8],
-		            m[3] * M.m[0] + m[4] * M.m[3] + m[5] * M.m[6],
-		            m[3] * M.m[1] + m[4] * M.m[4] + m[5] * M.m[7],
-		            m[3] * M.m[2] + m[4] * M.m[5] + m[5] * M.m[8],
-		            m[6] * M.m[0] + m[7] * M.m[3] + m[8] * M.m[6],
-		            m[6] * M.m[1] + m[7] * M.m[4] + m[8] * M.m[7],
-		            m[6] * M.m[2] + m[7] * M.m[5] + m[8] * M.m[8]);
+		return mat3(m[0] * M[0] + m[1] * M[3] + m[2] * M[6],
+		            m[0] * M[1] + m[1] * M[4] + m[2] * M[7],
+		            m[0] * M[2] + m[1] * M[5] + m[2] * M[8],
+		            m[3] * M[0] + m[4] * M[3] + m[5] * M[6],
+		            m[3] * M[1] + m[4] * M[4] + m[5] * M[7],
+		            m[3] * M[2] + m[4] * M[5] + m[5] * M[8],
+		            m[6] * M[0] + m[7] * M[3] + m[8] * M[6],
+		            m[6] * M[1] + m[7] * M[4] + m[8] * M[7],
+		            m[6] * M[2] + m[7] * M[5] + m[8] * M[8]);
 	}
 	const mat3 operator*(float f) const
 	{
@@ -112,29 +104,29 @@ struct mat3
 
 	mat3& operator+=(const mat3 &M)
 	{
-		m[0] += M.m[0]; m[1] += M.m[1]; m[2] += M.m[2];
-		m[3] += M.m[3]; m[4] += M.m[4]; m[5] += M.m[5];
-		m[6] += M.m[6]; m[7] += M.m[7]; m[8] += M.m[8];
+		m[0] += M[0]; m[1] += M[1]; m[2] += M[2];
+		m[3] += M[3]; m[4] += M[4]; m[5] += M[5];
+		m[6] += M[6]; m[7] += M[7]; m[8] += M[8];
 		return *this;
 	}
 	mat3& operator-=(const mat3 &M)
 	{
-		m[0] -= M.m[0]; m[1] -= M.m[1]; m[2] -= M.m[2];
-		m[3] -= M.m[3]; m[4] -= M.m[4]; m[5] -= M.m[5];
-		m[6] -= M.m[6]; m[7] -= M.m[7]; m[8] -= M.m[8];
+		m[0] -= M[0]; m[1] -= M[1]; m[2] -= M[2];
+		m[3] -= M[3]; m[4] -= M[4]; m[5] -= M[5];
+		m[6] -= M[6]; m[7] -= M[7]; m[8] -= M[8];
 		return *this;
 	}
 	mat3& operator*=(const mat3 &M)
 	{
-		set(m[0] * M.m[0] + m[1] * M.m[3] + m[2] * M.m[6],
-		    m[0] * M.m[1] + m[1] * M.m[4] + m[2] * M.m[7],
-		    m[0] * M.m[2] + m[1] * M.m[5] + m[2] * M.m[8],
-		    m[3] * M.m[0] + m[4] * M.m[3] + m[5] * M.m[6],
-		    m[3] * M.m[1] + m[4] * M.m[4] + m[5] * M.m[7],
-		    m[3] * M.m[2] + m[4] * M.m[5] + m[5] * M.m[8],
-		    m[6] * M.m[0] + m[7] * M.m[3] + m[8] * M.m[6],
-		    m[6] * M.m[1] + m[7] * M.m[4] + m[8] * M.m[7],
-		    m[6] * M.m[2] + m[7] * M.m[5] + m[8] * M.m[8]);
+		set(m[0] * M[0] + m[1] * M[3] + m[2] * M[6],
+		    m[0] * M[1] + m[1] * M[4] + m[2] * M[7],
+		    m[0] * M[2] + m[1] * M[5] + m[2] * M[8],
+		    m[3] * M[0] + m[4] * M[3] + m[5] * M[6],
+		    m[3] * M[1] + m[4] * M[4] + m[5] * M[7],
+		    m[3] * M[2] + m[4] * M[5] + m[5] * M[8],
+		    m[6] * M[0] + m[7] * M[3] + m[8] * M[6],
+		    m[6] * M[1] + m[7] * M[4] + m[8] * M[7],
+		    m[6] * M[2] + m[7] * M[5] + m[8] * M[8]);
 		return *this;
 	}
 	mat3& operator*=(float f)
@@ -155,31 +147,31 @@ struct mat3
 
 inline float determinant(const mat3 &M)
 {
-	return M.m[0] * (M.m[4] * M.m[8] - M.m[5] * M.m[7])
-	     - M.m[1] * (M.m[3] * M.m[8] - M.m[5] * M.m[6])
-	     + M.m[2] * (M.m[3] * M.m[7] - M.m[4] * M.m[6]);
+	return M[0] * (M[4] * M[8] - M[5] * M[7])
+	     - M[1] * (M[3] * M[8] - M[5] * M[6])
+	     + M[2] * (M[3] * M[7] - M[4] * M[6]);
 }
 
 inline const mat3 inverse(const mat3 &M)
 {
 	const float det = 1.0f / determinant(M);
 
-	return mat3((M.m[4] * M.m[8] - M.m[5] * M.m[7]) * det,
-	            (M.m[2] * M.m[7] - M.m[1] * M.m[8]) * det,
-	            (M.m[1] * M.m[5] - M.m[2] * M.m[4]) * det,
-	            (M.m[5] * M.m[6] - M.m[3] * M.m[8]) * det,
-	            (M.m[0] * M.m[8] - M.m[2] * M.m[6]) * det,
-	            (M.m[2] * M.m[3] - M.m[0] * M.m[5]) * det,
-	            (M.m[3] * M.m[7] - M.m[4] * M.m[6]) * det,
-	            (M.m[1] * M.m[6] - M.m[0] * M.m[7]) * det,
-	            (M.m[0] * M.m[4] - M.m[1] * M.m[3]) * det);
+	return mat3((M[4] * M[8] - M[5] * M[7]) * det,
+	            (M[2] * M[7] - M[1] * M[8]) * det,
+	            (M[1] * M[5] - M[2] * M[4]) * det,
+	            (M[5] * M[6] - M[3] * M[8]) * det,
+	            (M[0] * M[8] - M[2] * M[6]) * det,
+	            (M[2] * M[3] - M[0] * M[5]) * det,
+	            (M[3] * M[7] - M[4] * M[6]) * det,
+	            (M[1] * M[6] - M[0] * M[7]) * det,
+	            (M[0] * M[4] - M[1] * M[3]) * det);
 }
 
 inline const mat3 transpose(const mat3 &M)
 {
-	return mat3(M.m[0], M.m[3], M.m[6],
-	            M.m[1], M.m[4], M.m[7],
-	            M.m[2], M.m[5], M.m[8]);
+	return mat3(M[0], M[3], M[6],
+	            M[1], M[4], M[7],
+	            M[2], M[5], M[8]);
 }
 
 #endif /* MAT3_H */

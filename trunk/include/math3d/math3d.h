@@ -23,6 +23,37 @@ const float math_epsilon = 1e-5f;
 const float math_radians = 3.14159265f / 180.0f;
 const float math_degrees = 180.0f / 3.14159265f;
 
+// constants
+const vec2 vec2_zero(0, 0);
+const vec2 vec2_x(1, 0);
+const vec2 vec2_y(0, 1);
+
+const vec3 vec3_zero(0, 0, 0);
+const vec3 vec3_x(1, 0, 0);
+const vec3 vec3_y(0, 1, 0);
+const vec3 vec3_z(0, 0, 1);
+
+const mat2 mat2_zero(0, 0,
+                     0, 0);
+const mat2 mat2_identity(1, 0,
+                         0, 1);
+
+const mat3 mat3_zero(0, 0, 0,
+                     0, 0, 0,
+                     0, 0, 0);
+const mat3 mat3_identity(1, 0, 0,
+                         0, 1, 0,
+                         0, 0, 1);
+
+const mat4 mat4_zero(0, 0, 0, 0,
+                     0, 0, 0, 0,
+                     0, 0, 0, 0,
+                     0, 0, 0, 0);
+const mat4 mat4_identity(1, 0, 0, 0,
+                         0, 1, 0, 0,
+                         0, 0, 1, 0,
+                         0, 0, 0, 1);
+
 // vec2
 inline void vec2::set(const vec3 &v) { x = v.x; y = v.y; }
 inline void vec2::set(const vec4 &v) { x = v.x; y = v.y; }
@@ -43,37 +74,37 @@ inline void quat::set(const vec3 &v, float w) { x = v.x; y = v.y; z = v.z; this-
 
 inline void quat::set(const mat3 &M)
 {
-	const float t = M.m[0] + M.m[4] + M.m[8] + 1;
+	const float t = M[0] + M[4] + M[8] + 1;
 	float       s;
 
 	if (t > math_epsilon)
 	{
 		s = sqrtf(t) * 2;
-		x = (M.m[7] - M.m[5]) / s;
-		y = (M.m[2] - M.m[6]) / s;
-		z = (M.m[3] - M.m[1]) / s;
+		x = (M[7] - M[5]) / s;
+		y = (M[2] - M[6]) / s;
+		z = (M[3] - M[1]) / s;
 		w = 0.25f * s;
-	} else if (M.m[0] > M.m[4] && M.m[0] > M.m[8])
+	} else if (M[0] > M[4] && M[0] > M[8])
 	{
-		s = sqrtf(1 + M.m[0] - M.m[4] - M.m[8]) * 2;
+		s = sqrtf(1 + M[0] - M[4] - M[8]) * 2;
 		x = 0.25f * s;
-		y = (M.m[3] + M.m[1]) / s;
-		z = (M.m[2] + M.m[6]) / s;
-		w = (M.m[7] - M.m[5]) / s;
-	} else if (M.m[4] > M.m[8])
+		y = (M[3] + M[1]) / s;
+		z = (M[2] + M[6]) / s;
+		w = (M[7] - M[5]) / s;
+	} else if (M[4] > M[8])
 	{
-		s = sqrtf(1 + M.m[4] - M.m[0] - M.m[8]) * 2;
-		x = (M.m[3] + M.m[1]) / s;
+		s = sqrtf(1 + M[4] - M[0] - M[8]) * 2;
+		x = (M[3] + M[1]) / s;
 		y = 0.25f * s;
-		z = (M.m[7] + M.m[5]) / s;
-		w = (M.m[2] - M.m[6]) / s;
+		z = (M[7] + M[5]) / s;
+		w = (M[2] - M[6]) / s;
 	} else
 	{
-		s = sqrtf(1 + M.m[8] - M.m[0] - M.m[4]) * 2;
-		x = (M.m[2] + M.m[6]) / s;
-		y = (M.m[7] + M.m[5]) / s;
+		s = sqrtf(1 + M[8] - M[0] - M[4]) * 2;
+		x = (M[2] + M[6]) / s;
+		y = (M[7] + M[5]) / s;
 		z = 0.25f * s;
-		w = (M.m[4] - M.m[1]) / s;
+		w = (M[4] - M[1]) / s;
 	}
 
 	*this = normalize(*this);
@@ -87,35 +118,35 @@ inline void quat::set(const mat4 &M)
 // mat2
 inline void mat2::set(const mat3 &M)
 {
-	set(M.m[0], M.m[1],
-	    M.m[3], M.m[4]);
+	set(M[0], M[1],
+	    M[3], M[4]);
 }
 
 inline void mat2::set(const mat4 &M)
 {
-	set(M.m[0], M.m[1],
-	    M.m[4], M.m[5]);
+	set(M[0], M[1],
+	    M[4], M[5]);
 }
 
 inline const vec2 operator*(const mat2 &M, const vec2 &v)
 {
-	return vec2(M.m[0] * v.x + M.m[1] * v.y,
-	            M.m[2] * v.x + M.m[3] * v.y);
+	return vec2(M[0] * v.x + M[1] * v.y,
+	            M[2] * v.x + M[3] * v.y);
 }
 
 // mat3
 inline void mat3::set(const mat2 &M)
 {
-	set(M.m[0], M.m[1], 0,
-	    M.m[2], M.m[3], 0,
-	    0,      0,      1);
+	set(M[0], M[1], 0,
+	    M[2], M[3], 0,
+	    0,    0,    1);
 }
 
 inline void mat3::set(const mat4 &M)
 {
-	set(M.m[0], M.m[1], M.m[2],
-	    M.m[4], M.m[5], M.m[6],
-	    M.m[8], M.m[9], M.m[10]);
+	set(M[0], M[1], M[2],
+	    M[4], M[5], M[6],
+	    M[8], M[9], M[10]);
 }
 
 inline void mat3::set(const quat &q)
@@ -137,32 +168,32 @@ inline void mat3::set(const quat &q)
 
 inline const vec2 operator*(const mat3 &M, const vec2 &v)
 {
-	return vec2(M.m[0] * v.x + M.m[1] * v.y + M.m[2],
-	            M.m[3] * v.x + M.m[4] * v.y + M.m[5]);
+	return vec2(M[0] * v.x + M[1] * v.y + M[2],
+	            M[3] * v.x + M[4] * v.y + M[5]);
 }
 
 inline const vec3 operator*(const mat3 &M, const vec3 &v)
 {
-	return vec3(M.m[0] * v.x + M.m[1] * v.y + M.m[2] * v.z,
-	            M.m[3] * v.x + M.m[4] * v.y + M.m[5] * v.z,
-	            M.m[6] * v.x + M.m[7] * v.y + M.m[8] * v.z);
+	return vec3(M[0] * v.x + M[1] * v.y + M[2] * v.z,
+	            M[3] * v.x + M[4] * v.y + M[5] * v.z,
+	            M[6] * v.x + M[7] * v.y + M[8] * v.z);
 }
 
 // mat4
 inline void mat4::set(const mat2 &M)
 {
-	set(M.m[0], M.m[1], 0, 0,
-	    M.m[2], M.m[3], 0, 0,
-	    0,      0,      1, 0,
-	    0,      0,      0, 1);
+	set(M[0], M[1], 0, 0,
+	    M[2], M[3], 0, 0,
+	    0,    0,    1, 0,
+	    0,    0,    0, 1);
 }
 
 inline void mat4::set(const mat3 &M)
 {
-	set(M.m[0], M.m[1], M.m[2], 0,
-	    M.m[3], M.m[4], M.m[5], 0,
-	    M.m[6], M.m[7], M.m[8], 0,
-	    0,      0,      0,      1);
+	set(M[0], M[1], M[2], 0,
+	    M[3], M[4], M[5], 0,
+	    M[6], M[7], M[8], 0,
+	    0,    0,    0,    1);
 }
 
 inline void mat4::set(const quat &q)
@@ -172,23 +203,23 @@ inline void mat4::set(const quat &q)
 
 inline const vec2 operator*(const mat4 &M, const vec2 &v)
 {
-	return vec2(M.m[0] * v.x + M.m[1] * v.y + M.m[2] + M.m[3],
-	            M.m[4] * v.x + M.m[5] * v.y + M.m[6] + M.m[7]);
+	return vec2(M[0] * v.x + M[1] * v.y + M[2] + M[3],
+	            M[4] * v.x + M[5] * v.y + M[6] + M[7]);
 }
 
 inline const vec3 operator*(const mat4 &M, const vec3 &v)
 {
-	return vec3(M.m[ 0] * v.x + M.m[ 1] * v.y + M.m[ 2] * v.z + M.m[ 3],
-	            M.m[ 4] * v.x + M.m[ 5] * v.y + M.m[ 6] * v.z + M.m[ 7],
-	            M.m[ 8] * v.x + M.m[ 9] * v.y + M.m[10] * v.z + M.m[11]);
+	return vec3(M[ 0] * v.x + M[ 1] * v.y + M[ 2] * v.z + M[ 3],
+	            M[ 4] * v.x + M[ 5] * v.y + M[ 6] * v.z + M[ 7],
+	            M[ 8] * v.x + M[ 9] * v.y + M[10] * v.z + M[11]);
 }
 
 inline const vec4 operator*(const mat4 &M, const vec4 &v)
 {
-	return vec4(M.m[ 0] * v.x + M.m[ 1] * v.y + M.m[ 2] * v.z + M.m[ 3] * v.w,
-	            M.m[ 4] * v.x + M.m[ 5] * v.y + M.m[ 6] * v.z + M.m[ 7] * v.w,
-	            M.m[ 8] * v.x + M.m[ 9] * v.y + M.m[10] * v.z + M.m[11] * v.w,
-	            M.m[12] * v.x + M.m[13] * v.y + M.m[14] * v.z + M.m[15] * v.w);
+	return vec4(M[ 0] * v.x + M[ 1] * v.y + M[ 2] * v.z + M[ 3] * v.w,
+	            M[ 4] * v.x + M[ 5] * v.y + M[ 6] * v.z + M[ 7] * v.w,
+	            M[ 8] * v.x + M[ 9] * v.y + M[10] * v.z + M[11] * v.w,
+	            M[12] * v.x + M[13] * v.y + M[14] * v.z + M[15] * v.w);
 }
 
 // transformation
