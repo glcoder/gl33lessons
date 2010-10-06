@@ -7,11 +7,9 @@
 
 Этот урок будет немного сложнее предыдущего, но зато интересней, в нем будет рассмотрен следующий материал:
   # Системы координат OpenGL
-  # Работа с матрицами
-  # Создание простой текстуры
-  # Создание VBO для координат вершин и текстурных координат куба
-  # Создание индексного буфера для описания геометрии куба
-  # Передача матрицы трансформации в шейдерную программу
+  # Работа с матрицами, подготовка и передача их в шейдерную программу
+  # Создание простой текстуры и передача ее в шейдер
+  # Создание вершинного и индексного буфера для геометрии куба
   # Вывод вращающегося куба на экран
 
 == Системы координат OpenGL ==
@@ -131,14 +129,351 @@ Matrix4Mul(viewProjectionMatrix, projectionMatrix, viewMatrix);
 
 Кстати, по-умолчанию система координат OpenGL построена таким образом, что ось `Z` направлена на нас (т.е. буквально из экрана на нас), ось `X` направлена вправо и ось `Y` направлена вверх. Поэтому "отодвинем", значит перенесем сцену по оси `Z`, например в точку `(0,0,-2)`.
 
-Еще одна частая проблема, которая приводит к путанице в среде разработчиков графических приложений - формат матриц, который может быть двух видов: ведущие строки (`row-major`) или ведущие столбцы (`column-major`). В математической литературе принято описывать матрицы в формате ведущих строк, также этот формат предполагает, что матрица будет расположена в памяти компьютера последовательно по строчкам. Однако в литературе связанной с OpenGL чаще всего используется формат описания матриц с ведущими столбцами, что и создает в итоге путаницу. Перевод между двумя этими форматами осуществляется транспонированием матрицы.
+Для вращения куба нам необходимо построить матрицу вращения:
+{{{
+// матрица вращения куба и итоговая матрица трансформации
+Matrix4 modelMatrix = {0.0f}, modelViewProjectionMatrix = {0.0f};
+
+// зададим углы поворота куба с учетом времени
+// просто произвольные значения
+if ((cubeRotation[0] += 3.0f * (float)deltaTime) > 360.0f)
+	cubeRotation[0] -= 360.0f;
+
+if ((cubeRotation[1] += 15.0f * (float)deltaTime) > 360.0f)
+	cubeRotation[1] -= 360.0f;
+
+if ((cubeRotation[2] += 7.0f * (float)deltaTime) > 360.0f)
+	cubeRotation[2] -= 360.0f;
+
+// рассчитаем матрицу преобразования координат вершин куба
+Matrix4Rotation(modelMatrix, cubeRotation[0], cubeRotation[1], cubeRotation[2]);
+Matrix4Mul(modelViewProjectionMatrix, viewProjectionMatrix, modelMatrix);
+}}}
+
+Для передачи матрицы в шейдерную программу нам необходим узнать ее индекс:
+{{{
+// переменная для хранения индекса матрицы в шейдерной программе
+GLint matrixLocation;
+
+// получим индекс матрицы
+matrixLocation = glGetUniformLocation(shaderProgram, "modelViewProjectionMatrix");
+}}}
+
+После получения итоговой матрицы и ее индекса мы можем передать ее в шейдерную программу:
+{{{
+// предаем матрицу трансформации в формате row-major
+glUniformMatrix4fv(matrixLocation, 1, GL_TRUE, modelViewProjectionMatrix);
+}}}
+
+Очень частая проблема, которая приводит к путанице в среде разработчиков графических приложений - формат матриц, который может быть двух видов: ведущие строки (`row-major`) или ведущие столбцы (`column-major`). В математической литературе принято описывать матрицы в формате ведущих строк, также этот формат предполагает, что матрица будет расположена в памяти компьютера последовательно по строчкам. Однако в литературе связанной с OpenGL чаще всего используется формат описания матриц с ведущими столбцами, что и создает в итоге путаницу. Перевод между двумя этими форматами осуществляется транспонированием матрицы.
 
 Также от формата матрицы зависит в каком формате представлены вектора, это либо вектор-столбец, либо вектор-строка, для матрицы в формате ведущих строк либо ведущих столбцов, соответственно. Именно поэтому матрицы с ведущими строками умножаются на вектора, а в случае матриц с ведущими столбцами необходимо умножать вектор на матрицу.
 
 На протяжении всех уроков, включая исходные коды урока и шейдеры к уроку, мы будем использовать формат матриц с ведущими строками (`row-major`). Но это не принципиально, вы можете использовать тот формат, который больше нравится вам.
 
-Вектор с координатами вершины переводится из локальной системы координат в видовую умножением на матрицу объекта `ModelMatrix`, затем на матрицу наблюдателя `ViewMatrix` и только в конце на матрицу проекции `ProjectionMatrix`. Однако при использовании матриц с ведущими строками необходимо перевернуть этот порядок задом-наперед, чтобы в итоге умножить матрицу на вектор, как уже было отмечено выше.
+Вектор с координатами вершины переводится из локальной системы координат в однородную умножением на матрицу объекта `ModelMatrix`, затем на матрицу наблюдателя `ViewMatrix` и только в конце на матрицу проекции `ProjectionMatrix`. Однако при использовании матриц с ведущими строками необходимо перевернуть этот порядок задом-наперед, чтобы в итоге умножить матрицу на вектор, как уже было отмечено выше.
 
 == Загрузка и создание текстуры ==
 
 Тема текстур в OpenGL очень объемная, существуют различные типа текстур для разных целей. В этом уроке мы создадим самую простую и наиболее часто используемую текстуру - двумерную текстуру, в OpenGL такая текстура обозначается как `GL_TEXTURE_2D`.
+
+Изображение для текстуры в этом уроке хранится в формате TGA. Этот очень простой формат, местами даже проще чем BMP. Для загрузки изображения из этого формата и создания текстуры используется функция `TextureCreateFromTGA`:
+{{{
+// формат заголовка TGA
+struct TGAHeader
+{
+	uint8_t  idlength;
+	uint8_t  colormap;
+	uint8_t  datatype;
+	uint8_t  colormapinfo[5];
+	uint16_t xorigin;
+	uint16_t yorigin;
+	uint16_t width;
+	uint16_t height;
+	uint8_t  bitperpel;
+	uint8_t  description;
+};
+
+// функция загрузки изображения из файла TGA и сздания текстуры
+GLuint TextureCreateFromTGA(const char *fileName)
+{
+	ASSERT(fileName);
+
+	TGAHeader *header;
+	uint8_t   *buffer;
+	uint32_t  size;
+	GLint     format, internalFormat;
+	GLuint    texture;
+
+	// попытаемся загрузить изображение из файла
+	if (!LoadFile(fileName, true, &buffer, &size))
+		return 0;
+
+	// если размер файла заведомо меньше заголовка TGA
+	if (size <= sizeof(TGAHeader))
+	{
+		LOG_ERROR("Too small file '%s'\n", fileName);
+		delete[] buffer;
+		return 0;
+	}
+
+	header = (TGAHeader*)buffer;
+
+	// проверим формат TGA-файла - несжатое RGB или RGBA изображение
+	if (header->datatype != 2 || (header->bitperpel != 24 && header->bitperpel != 32))
+	{
+		LOG_ERROR("Wrong TGA format '%s'\n", fileName);
+		delete[] buffer;
+		return 0;
+	}
+
+	// получим формат текстуры
+	format = (header->bitperpel == 24 ? GL_BGR : GL_BGRA);
+	internalFormat = (format == GL_BGR ? GL_RGB8 : GL_RGBA8);
+
+	// запросим у OpenGL свободный индекс текстуры
+	glGenTextures(1, &texture);
+
+	// сделаем текстуру активной
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	// установим параметры фильтрации текстуры - линейная фильтрация
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// установим параметры "оборачивания" текстуры - отсутствие оборачивания
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// загрузим данные о цвете в текущую автивную текстуру
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, header->width, header->height, 0, format,
+		GL_UNSIGNED_BYTE, (const GLvoid*)(buffer + sizeof(TGAHeader) + header->idlength));
+
+	// после загрузки в текстуру данные о цвете в памяти нам больше не нужны
+	delete[] buffer;
+
+	// проверим на наличие ошибок
+	OPENGL_CHECK_FOR_ERRORS();
+
+	return texture;
+}
+}}}
+
+Добавить к кооментариям исходного кода приведенного выше практически нечего, используя функцию `TextureCreateFromTGA` полчаем готовую для исопльзования текстуру:
+{{{
+// переменная для хранения индекса текстуры
+GLuint colorTexture = 0;
+
+// создадим и загрузим текстуру
+colorTexture = TextureCreateFromTGA("data/texture.tga");
+
+// если не получилось загрузить текстуру
+if (!colorTexture)
+	return false;
+
+// делаем активным текстурный юнит 0
+glActiveTexture(GL_TEXTURE0);
+
+// назначаем текстуру на активный текстурный юнит
+glBindTexture(GL_TEXTURE_2D, colorTexture);
+}}}
+
+Функция `glActiveTexture` задает активный текстурный юнит видеокарты, который мы будем использовать. Привязка текстуры к активному текстурному юниту осуществляется функцией `glBindTexture`.
+
+Теперь необходимо сообщить шейдерной программе в каком текстурном юните распологается наша текстура:
+{{{
+// переменная для хранения индекса текстуры
+GLint textureLocation = -1;
+
+// получим индекс текстуры из шейдерной программы
+textureLocation = glGetUniformLocation(shaderProgram, "colorTexture");
+
+// укажем, что текстура привязана к текстурному юниту 0
+if (textureLocation != -1)
+	glUniform1i(textureLocation , 0);
+}}}
+
+Теперь шейдерная программа знает какой текстурный юнит использовать. Максимальное количество доступных текстурных юнитов можно узнать используя функцию `glGetIntegerv` с параметром `GL_MAX_TEXTURE_IMAGE_UNITS`.
+
+== Геометрия куба и буферы для ее хранения ===
+
+Также ккак и в прошлом уроке для тругольника мы вручную зададим геометрию куба, однако в этот раз не будем задавать цвет вершин, а назначим им текстурные координаты:
+{{{
+// количество вершин куба
+static const uint32_t cubeVerticesCount = 24;
+
+// описание геометрии куба для всех его сторон
+// координаты вершин куба
+const float s = 1.0f; // половина размера куба
+const float cubePositions[cubeVerticesCount][3] = {
+	{-s, s, s}, { s, s, s}, { s,-s, s}, {-s,-s, s}, // front
+	{ s, s,-s}, {-s, s,-s}, {-s,-s,-s}, { s,-s,-s}, // back
+	{-s, s,-s}, { s, s,-s}, { s, s, s}, {-s, s, s}, // top
+	{ s,-s,-s}, {-s,-s,-s}, {-s,-s, s}, { s,-s, s}, // bottom
+	{-s, s,-s}, {-s, s, s}, {-s,-s, s}, {-s,-s,-s}, // left
+	{ s, s, s}, { s, s,-s}, { s,-s,-s}, { s,-s, s}  // right
+};
+
+// текстурные координаты куба
+const float cubeTexcoords[cubeVerticesCount][2] = {
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // front
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // back
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // top
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // bottom
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // left
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}  // right
+};
+}}}
+
+Конечно мы можем рисовать куб используя прямоугольники, однак обычно геометрия моделей представлена в виде граней (`face`), которые представляют собой треугольники. Для того чтобы нарисовать куб треугольниками не дублируя вершин на понадобиться индексный буфер, в котором последовательно идут по три индекса для каждого из треугольников, котоыре мы будем рисовать:
+{{{
+// количество индексов куба
+const uint32_t cubeIndicesCount = 36;
+
+// индексы вершин куба в порядке поротив часовой стрелки
+const uint32_t cubeIndices[cubeIndicesCount] = {
+	 0, 3, 1,  1, 3, 2, // front
+	 4, 7, 5,  5, 7, 6, // back
+	 8,11, 9,  9,11,10, // top
+	12,15,13, 13,15,14, // bottom
+	16,19,17, 17,19,18, // left
+	20,23,21, 21,23,22  // right
+};
+}}}
+
+Индексы определяют номера вершин в вершинном буфере, которые будет использоваться при выводе объекта на экран.
+
+Теперь необходимо создать VBO для хранения вершин куба и индексного буфера, также не забываем про VAO, в котором будут хранится все созданные связи между VBO и вершинными атрибутами в шейдерной программе:
+{{{
+// переменные для хранения VAO и VBO связанных с кубом
+GLuint cubeVBO[3], cubeVAO;
+
+// переменные для хранения индексов вершинных атрибутов
+GLint positionLocation = -1, texcoordLocation = -1;
+
+// создаем VAO
+glGenVertexArrays(1, &cubeVAO);
+
+// сделаем VAO активным
+glBindVertexArray(cubeVAO);
+
+// создадим 3 VBO для данных куба - координаты вершин, текстурные координат и индексный буфер
+glGenBuffers(3, cubeVBO);
+
+// получим индекс вершинного атрибута 'position' из шейдерной программы
+positionLocation = glGetAttribLocation(shaderProgram, "position");
+if (positionLocation != -1)
+{
+	// начинаем работу с буфером для координат вершин куба
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO[0]);
+	// поместим в буфер координаты вершин куба
+	glBufferData(GL_ARRAY_BUFFER, cubeVerticesCount * (3 * sizeof(float)),
+		cubePositions, GL_STATIC_DRAW);
+
+	// укажем параметры вершинного атрибута для текущего активного VBO
+	glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	// разрешим использование вершинного атрибута
+	glEnableVertexAttribArray(positionLocation);
+}
+
+// получим индекс вершинного атрибута 'texcoord' из шейдерной программы
+texcoordLocation = glGetAttribLocation(shaderProgram, "texcoord");
+if (texcoordLocation != -1)
+{
+	// начинаем работу с буфером для текстурных координат куба
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO[1]);
+	// поместим в буфер текстурные координаты куба
+	glBufferData(GL_ARRAY_BUFFER, cubeVerticesCount * (2 * sizeof(float)),
+		cubeTexcoords, GL_STATIC_DRAW);
+
+	// укажем параметры вершинного атрибута для текущего активного VBO
+	glVertexAttribPointer(texcoordLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+	// разрешим использование вершинного атрибута
+	glEnableVertexAttribArray(texcoordLocation);
+}
+
+// начинаем работу с индексным буфером
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeVBO[2]);
+// поместим в буфер индексы вершин куба
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, cubeIndicesCount * sizeof(uint32_t),
+	cubeIndices, GL_STATIC_DRAW);
+}}}
+
+Обратите внмание, что вершинный буфер задается параметром `GL_ARRAY_BUFFER`, а индексный буфер задается параметром `GL_ELEMENT_ARRAY_BUFFER`.
+
+С VAO может быть связан только один индексный буфер, в отличии от вершинных буферов, которых может быть несколько. Таким образом предопагается, что VAO будет использоваться для вывода на экран одной модели, в данном случае - куба.
+
+== Вывод вращающегося куба на экран ==
+
+Совместив все предыдущие действия мы можем вывести на экран куб:
+{{{
+// делаем шейдерную программу активной
+glUseProgram(shaderProgram);
+
+// передаем в шейдер матрицу преобразования координат вершин куба
+glUniformMatrix4fv(matrixLocation, 1, GL_TRUE, modelViewProjectionMatrix);
+
+// сделаем VAO куба активным
+glBindVertexArray(cubeVAO);
+
+// вывдоим куб на экран
+glDrawElements(GL_TRIANGLES, cubeIndicesCount, GL_UNSIGNED_INT, NULL);
+}}}
+
+== Шейдеры к уроку ==
+
+Код вершинного шейдера:
+{{{
+#version 330 core
+
+// матрица преобразования координат, получаемая из программы
+uniform mat4 modelViewProjectionMatrix;
+
+// входные вершинные атрибуты
+in vec3 position;
+in vec2 texcoord;
+
+// исходящие параметры, которые будут переданы в фрагментный шейдер
+out vec2 fragTexcoord;
+
+void main(void)
+{
+	// перевод позиции вершины из локальных координат в однородные
+	gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
+
+	// передадим текстурные координаты в фрагментный шейдер
+	fragTexcoord = texcoord;
+}
+}}}
+
+Код фрагментного шедера:
+{{{
+#version 330 core
+
+// текстура
+uniform sampler2D colorTexture;
+
+// параметры, полученные из вершинного шейдера
+in vec2 fragTexcoord;
+
+// результирующий цвет пикселя на экране
+out vec4 color;
+
+void main(void)
+{
+	// получим цвет пикселя из текстуры по текстурным координатам
+	color = texture(colorTexture, fragTexcoord);
+}
+}}}
+
+== Полезные ссылки ==
+
+  # [http://www.opengl.org/resources/faq/technical/transformations.htm OpenGL Transformations]
+  # [http://www.j3d.org/matrix_faq/matrfaq_latest.html The Matrix and Quaternions FAQ]
+  # [http://www.opengl.org/sdk/docs/man/xhtml/glUniform.xml Описание функций glUniform]
+
+== Исходный код ==
+
+Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
+  * Используя SVN [http://code.google.com/p/gl33lessons/source/browse/#svn/branches/lesson03 lesson03]
+  * Скачав архив [http://code.google.com/p/gl33lessons/downloads/detail?name=lesson03.zip lesson03.zip]
