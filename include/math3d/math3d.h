@@ -130,9 +130,9 @@ inline void mat3::set(const quat &q)
 	            zz = q.z * q.z,
 	            zw = q.z * q.w;
 
-	set(1 - 2 * (yy + zz), 2 * (xy - zw), 2 * (xz + yw),
-	    2 * (xy + zw), 1 - 2 * (xx + zz), 2 * (yz - xw),
-	    2 * (xz - yw), 2 * (yz + xw), 1 - 2 * (xx + yy));
+	set(1 - 2 * (yy + zz), 2 * (xy + zw), 2 * (xz - yw),
+	    2 * (xy - zw), 1 - 2 * (xx + zz), 2 * (yz + xw),
+	    2 * (xz + yw), 2 * (yz - xw), 1 - 2 * (xx + yy));
 }
 
 inline const vec2 operator*(const mat3 &M, const vec2 &v)
@@ -198,9 +198,9 @@ inline const mat4 rotation(float x, float y, float z)
 	            D = sinf(y), E = cosf(z), F = sinf(z);
 	const float AD = A * D, BD = B * D;
 
-	return mat4(C * E, -C * F, -D, 0,
-	           -BD * E + A * F, BD * F + A * E, -B * C, 0,
-	            AD * E + B * F, -AD * F + B * E, A * C, 0,
+	return mat4(C * E, -C * F, D, 0,
+	            BD * E + A * F, -BD * F + A * E, -B * C, 0,
+	           -AD * E + B * F, AD * F + B * E, A * C, 0,
 	            0, 0, 0, 1);
 }
 
