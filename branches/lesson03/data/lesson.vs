@@ -1,16 +1,20 @@
 #version 330 core
 
+// матрица преобразования координат, получаемая из программы
 uniform mat4 modelViewProjectionMatrix;
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 texcoord;
+// входящие вершинные атрибуты
+in vec3 position;
+in vec2 texcoord;
 
-out Fragment {
-	vec2 texcoord;
-} Frag;
+// исходящие параметры, которые будут переданы в фрагментный шейдер
+out vec2 fragTexcoord;
 
 void main(void)
 {
-	gl_Position   = modelViewProjectionMatrix * vec4(position, 1.0);
-	Frag.texcoord = texcoord;
+	// перевод позиции вершины из локальных координат в однородные
+	gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
+
+	// передадим текстурные координаты в фрагментный шейдер
+	fragTexcoord = texcoord;
 }

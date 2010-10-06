@@ -4,6 +4,9 @@
 #include "common.h"
 #include "OpenGL.h"
 
+#define POSITION_LOCATION 0
+#define TEXCOORD_LOCATION 1
+
 // типы шейдеров
 #define ST_VERTEX     0x01
 #define ST_FRAGMENT   0x02

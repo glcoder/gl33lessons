@@ -1,14 +1,16 @@
 #version 330 core
 
+// текстура
 uniform sampler2D colorTexture;
 
-in Fragment {
-	vec2 texcoord;
-} Frag;
+// входящие параметры, которые получены из вершинного шейдера
+in vec2 fragTexcoord;
 
-layout(location = 0) out vec4 color;
+// результирующий цвет пикселя на экране
+out vec4 color;
 
 void main(void)
 {
-	color = texture(colorTexture, Frag.texcoord);
+	// получим цвет пикселя из текстуры по текстурным координатам
+	color = texture(colorTexture, fragTexcoord);
 }
