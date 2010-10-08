@@ -222,20 +222,21 @@ void GLWindowInput(const GLWindow *window)
 	ASSERT(window);
 
 	// центр окна
-	int xCenter = window->width / 2, yCenter = window->height / 2;
+	float xCenter = (float)window->width / 2, yCenter = (float)window->height / 2;
 
 	if (InputIsButtonDown(0))
 	{
 		// получим положение курсора мыши
 		InputGetCursorPos(cursorPos, cursorPos + 1);
 
-		thisRot = arcball(vec3(xCenter, yCenter, 0), vec3(cursorPos[0], cursorPos[1], 0),
+		thisRot = arcball(vec3(xCenter, yCenter, 0),
+			vec3((float)cursorPos[0], (float)cursorPos[1], 0),
 			xCenter, yCenter) * lastRot;
 	} else
 	{
 		lastRot = thisRot;
 		// сбросим положение курсора мыши в центр экрана
-		InputSetCursorPos(xCenter, yCenter);
+		InputSetCursorPos((int)xCenter, (int)yCenter);
 	}
 
 	// выход из приложения по кнопке Esc
@@ -252,9 +253,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	int result;
 
-	LoggerCreate("lesson03.log");
+	LoggerCreate("lesson04.log");
 
-	if (!GLWindowCreate("lesson03", 800, 600, false))
+	if (!GLWindowCreate("lesson04", 800, 600, false))
 		return 1;
 
 	result = GLWindowMainLoop();
