@@ -4,6 +4,8 @@
 #include "common.h"
 #include "OpenGL.h"
 
+#define FIXED_TIMESTAMP 1.0e-3
+
 #define INPUT_BUTTON_LEFT   0
 #define INPUT_BUTTON_RIGHT  1
 #define INPUT_BUTTON_MIDDLE 2

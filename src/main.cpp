@@ -12,14 +12,12 @@
 static GLuint shaderProgram = 0, colorTexture = 0;
 
 // положение курсора и его смещение с последнего кадра
-static int cursorPos[2] = {0,0}, cursorDelta[2] = {0,0};
-
-// для хранения двух углов поворота куба
-static float cubeRotation[2] = {0.0f, 0.0f};
+static int cursorPos[2] = {0};
 
 // матрицы преобразования
 static mat4 modelViewProjectionMatrix(mat4_identity), viewMatrix(mat4_identity),
             projectionMatrix(mat4_identity), viewProjectionMatrix(mat4_identity);
+static mat3 thisRot(mat3_identity), lastRot(mat3_identity);
 
 // индексы текстуры и матрицы в шейдерной программе
 static GLint colorTextureLocation = -1, modelViewProjectionMatrixLocation = -1;
@@ -214,16 +212,8 @@ void GLWindowUpdate(const GLWindow *window, double deltaTime)
 	ASSERT(window);
 	ASSERT(deltaTime >= 0.0); // проверка на возможность бага
 
-	// зададим углы поворота куба в зависимости от смещения курсора
-	cubeRotation[0] += 5.0f * cursorDelta[1] * (float)deltaTime;
-	cubeRotation[1] += 5.0f * cursorDelta[0] * (float)deltaTime;
-
-	// сбросим смещение курсора, чтобы не учитывать его дважды
-	cursorDelta[0] = cursorDelta[1] = 0;
-
 	// рассчитаем матрицу преобразования координат вершин куба
-	modelViewProjectionMatrix = viewProjectionMatrix
-		* rotation(cubeRotation[0], cubeRotation[1], 0.0f);
+	modelViewProjectionMatrix = viewProjectionMatrix * mat4(thisRot);
 }
 
 // функция обработки ввода с клавиатуры и мыши
@@ -234,19 +224,19 @@ void GLWindowInput(const GLWindow *window)
 	// центр окна
 	int xCenter = window->width / 2, yCenter = window->height / 2;
 
-	// получим положение курсора мыши
-	InputGetCursorPos(cursorPos, cursorPos + 1);
-
-	// если нажата левая кнопка мыши
 	if (InputIsButtonDown(0))
 	{
-		// получим смещение курсора мыши с последнего кадра
-		cursorDelta[0] += cursorPos[0] - xCenter;
-		cursorDelta[1] += cursorPos[1] - yCenter;
-	}
+		// получим положение курсора мыши
+		InputGetCursorPos(cursorPos, cursorPos + 1);
 
-	// сбросим положение курсора мыши в центр экрана
-	InputSetCursorPos(xCenter, yCenter);
+		thisRot = arcball(vec3(xCenter, yCenter, 0), vec3(cursorPos[0], cursorPos[1], 0),
+			xCenter, yCenter) * lastRot;
+	} else
+	{
+		lastRot = thisRot;
+		// сбросим положение курсора мыши в центр экрана
+		InputSetCursorPos(xCenter, yCenter);
+	}
 
 	// выход из приложения по кнопке Esc
 	if (InputIsKeyPressed(VK_ESCAPE))

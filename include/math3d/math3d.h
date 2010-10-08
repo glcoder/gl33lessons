@@ -74,40 +74,38 @@ inline void quat::set(const vec3 &v, float w) { x = v.x; y = v.y; z = v.z; this-
 
 inline void quat::set(const mat3 &M)
 {
-	const float t = M[0] + M[4] + M[8] + 1;
+	const float t = M[0] + M[4] + M[8];
 	float       s;
 
-	if (t > math_epsilon)
+	if (t > 0.0f)
 	{
-		s = sqrtf(t) * 2;
-		x = (M[7] - M[5]) / s;
-		y = (M[2] - M[6]) / s;
-		z = (M[3] - M[1]) / s;
-		w = 0.25f * s;
+		s = 0.5f / sqrtf(t + 1.0f);
+		x = (M[7] - M[5]) * s;
+		y = (M[2] - M[6]) * s;
+		z = (M[3] - M[1]) * s;
+		w = 0.25f / s;
 	} else if (M[0] > M[4] && M[0] > M[8])
 	{
-		s = sqrtf(1 + M[0] - M[4] - M[8]) * 2;
+		s = 2.0f * sqrtf(1.0f + M[0] - M[4] - M[8]);
 		x = 0.25f * s;
 		y = (M[3] + M[1]) / s;
 		z = (M[2] + M[6]) / s;
 		w = (M[7] - M[5]) / s;
 	} else if (M[4] > M[8])
 	{
-		s = sqrtf(1 + M[4] - M[0] - M[8]) * 2;
+		s = 2.0f * sqrtf(1.0f + M[4] - M[0] - M[8]);
 		x = (M[3] + M[1]) / s;
 		y = 0.25f * s;
 		z = (M[7] + M[5]) / s;
 		w = (M[2] - M[6]) / s;
 	} else
 	{
-		s = sqrtf(1 + M[8] - M[0] - M[4]) * 2;
+		s = 2.0f * sqrtf(1.0f + M[8] - M[0] - M[4]);
 		x = (M[2] + M[6]) / s;
 		y = (M[7] + M[5]) / s;
 		z = 0.25f * s;
-		w = (M[4] - M[1]) / s;
+		w = (M[3] - M[1]) / s;
 	}
-
-	*this = normalize(*this);
 }
 
 inline void quat::set(const mat4 &M)
@@ -161,9 +159,9 @@ inline void mat3::set(const quat &q)
 	            zz = q.z * q.z,
 	            zw = q.z * q.w;
 
-	set(1 - 2 * (yy + zz), 2 * (xy + zw), 2 * (xz - yw),
-	    2 * (xy - zw), 1 - 2 * (xx + zz), 2 * (yz + xw),
-	    2 * (xz + yw), 2 * (yz - xw), 1 - 2 * (xx + yy));
+	set(1 - 2 * (yy + zz), 2 * (xy - zw), 2 * (xz + yw),
+	    2 * (xy + zw), 1 - 2 * (xx + zz), 2 * (yz - xw),
+	    2 * (xz - yw), 2 * (yz + xw), 1 - 2 * (xx + yy));
 }
 
 inline const vec2 operator*(const mat3 &M, const vec2 &v)
@@ -220,6 +218,33 @@ inline const vec4 operator*(const mat4 &M, const vec4 &v)
 	            M[ 4] * v.x + M[ 5] * v.y + M[ 6] * v.z + M[ 7] * v.w,
 	            M[ 8] * v.x + M[ 9] * v.y + M[10] * v.z + M[11] * v.w,
 	            M[12] * v.x + M[13] * v.y + M[14] * v.z + M[15] * v.w);
+}
+
+// project (x,y) on a unity sphere
+inline const vec3 sproject(float x, float y, float xcenter, float ycenter)
+{
+	vec3 v(x / xcenter - 1.0f, 1.0f - y / ycenter, 0.0f);
+	float length = v.x * v.x + v.y * v.y;
+
+	if (length > 1.0f)
+	{
+		v = normalize(v);
+		v.z = 0.0f;
+	} else
+	{
+		v.z = sqrtf(1.0f - length);
+	}
+
+	return v;
+}
+
+// create arcball
+inline const quat arcball(const vec3 &from, const vec3 &to, float xcenter, float ycenter)
+{
+	vec3 vf = sproject(from.x, from.y, xcenter, ycenter);
+	vec3 vt = sproject(to.x,   to.y,   xcenter, ycenter);
+
+	return quat(cross(vf, vt), dot(vf, vt));
 }
 
 // transformation
