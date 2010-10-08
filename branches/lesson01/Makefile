@@ -1,5 +1,5 @@
 CPPFLAGS := -Wall -Wextra -O2 -Iinclude
-LDFLAGS  := -static-libgcc -lopengl32 -mwindows
+LDFLAGS  := -static-libgcc -static-libstdc++ -lopengl32 -mwindows
 
 BUILD_DIR  := build
 SOURCE_DIR := src

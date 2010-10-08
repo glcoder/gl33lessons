@@ -333,6 +333,7 @@ int GLWindowMainLoop()
 
 	while (g_window.running)
 	{
+
 		// обработаем сообщения из очереди сообщений
 		while (PeekMessage(&msg, g_hWnd, 0, 0, PM_REMOVE))
 		{
@@ -345,24 +346,27 @@ int GLWindowMainLoop()
 			DispatchMessage(&msg);
 		}
 
+		beginFrameTime = GetTimerTicks();
+
+		// начало обработки текущего кадра
+
+		// чтобы не отжирать 100% CPU небольшой Sleep
+		Sleep(2);
+
+		// обработка ввода
 		GLWindowInput(&g_window);
 
 		// если окно в рабочем режиме и активно
 		if (g_window.running && g_window.active)
 		{
-			// надо брать время из таймера
-			beginFrameTime = GetTimerTicks();
-
+			// рендер сцены
 			GLWindowRender(&g_window);
 			SwapBuffers(g_hDC);
 
-			// надо вычитать из текущего значения таймера
+			// обновление сцены
 			deltaTime = GetTimerTicks() - beginFrameTime;
-
 			GLWindowUpdate(&g_window, deltaTime);
 		}
-
-		Sleep(2);
 	}
 
 	g_window.running = g_window.active = false;

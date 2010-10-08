@@ -284,13 +284,13 @@ void GLWindowUpdate(const GLWindow *window, double deltaTime)
 	Matrix4 modelMatrix;
 
 	// зададим углы поворота куба с учетом времени
-	if ((cubeRotation[0] += 3.0f * (float)deltaTime) > 360.0f)
+	if ((cubeRotation[0] += 0.3f * (float)deltaTime) > 360.0f)
 		cubeRotation[0] -= 360.0f;
 
-	if ((cubeRotation[1] += 15.0f * (float)deltaTime) > 360.0f)
+	if ((cubeRotation[1] += 1.5f * (float)deltaTime) > 360.0f)
 		cubeRotation[1] -= 360.0f;
 
-	if ((cubeRotation[2] += 7.0f * (float)deltaTime) > 360.0f)
+	if ((cubeRotation[2] += 0.7f * (float)deltaTime) > 360.0f)
 		cubeRotation[2] -= 360.0f;
 
 	// рассчитаем матрицу преобразования координат вершин куба
