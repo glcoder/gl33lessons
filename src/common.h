@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cassert>
 #include <cmath>
+#include <ctime>
 
 #if defined(_MSC_VER)
 typedef __int8           int8_t;

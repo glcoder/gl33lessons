@@ -8,6 +8,10 @@ static const char vertexShaderDefines[] =
 	"#version 330 core\n"
 	"#define " DEFINE_TO_STR(POSITION_LOCATION) "\n"
 	"#define " DEFINE_TO_STR(TEXCOORD_LOCATION) "\n"
+	"#define " DEFINE_TO_STR(NORMAL_LOCATION) "\n"
+	"#define " DEFINE_TO_STR(COLOR_LOCATION) "\n"
+	"#define " DEFINE_TO_STR(OFFSET_LOCATION) "\n"
+	"#define " DEFINE_TO_STR(DIRECTION_LOCATION) "\n"
 	"\n";
 
 // набор параметров для фрагментного шейдера

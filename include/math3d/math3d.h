@@ -19,9 +19,57 @@
 
 // math constants
 const float math_epsilon = 1e-5f;
+const float math_pi      = 3.1415926536f;
+const float math_radians = math_pi / 180.0f;
+const float math_degrees = 180.0f / math_pi;
 
-const float math_radians = 3.14159265f / 180.0f;
-const float math_degrees = 180.0f / 3.14159265f;
+// functions
+#ifndef min
+inline float min(float a, float b)
+{
+	return (a < b ? a : b);
+}
+#endif
+
+#ifndef max
+inline float max(float a, float b)
+{
+	return (a < b ? b : a);
+}
+#endif
+
+inline float clamp(float x, float a, float b)
+{
+	return (x < a ? a : ( x > b ? b : x ));
+}
+
+inline float lerp(float a, float b, float t)
+{
+	return a + (b - a) * t;
+}
+
+inline float unirand()
+{
+	return (float)rand() / (float)RAND_MAX;
+}
+
+inline float unirand(float a)
+{
+	return a * unirand();
+}
+
+inline float unirand(float a, float b)
+{
+	return lerp(a, b, unirand());
+}
+
+inline const vec3 sphrand()
+{
+	float u = unirand(2.0f * math_pi);
+	float h = unirand(2.0f)  - 1.0f;
+	float r = sqrtf(1.0f - h * h);
+	return vec3(cosf(u) * r, sinf(u) * r, h);
+}
 
 // constants
 const vec2 vec2_zero(0, 0);
@@ -245,6 +293,25 @@ inline const quat arcball(const vec3 &from, const vec3 &to, float xcenter, float
 	vec3 vt = sproject(to.x,   to.y,   xcenter, ycenter);
 
 	return quat(cross(vf, vt), dot(vf, vt));
+}
+
+// shortest arc
+inline const quat shortarc(const vec3 &from, const vec3 &to)
+{
+	quat q(cross(from, to), dot(from, to));
+
+	q = normalize(q);
+	q.w += 1.0f;
+
+	if (q.w <= math_epsilon)
+	{
+		if ((from.z * from.z) > (from.x * from.x))
+			q.set(0, from.z, -from.y, q.w);
+		else 
+			q.set(from.y, -from.x, 0, q.w);
+	}
+
+	return normalize(q);
 }
 
 // transformation

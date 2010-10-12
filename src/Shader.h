@@ -4,8 +4,12 @@
 #include "common.h"
 #include "OpenGL.h"
 
-#define POSITION_LOCATION 0
-#define TEXCOORD_LOCATION 1
+#define POSITION_LOCATION    0
+#define TEXCOORD_LOCATION    1
+#define NORMAL_LOCATION      2
+#define COLOR_LOCATION       3
+#define OFFSET_LOCATION      4
+#define DIRECTION_LOCATION   5
 
 // типы шейдеров
 #define ST_VERTEX     0x01

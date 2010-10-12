@@ -60,6 +60,9 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		0
 	};
 
+	// установим зерно генератора случайных чисел
+	srand((unsigned int)time(NULL));
+
 	// инциализация таймера
 	QueryPerformanceFrequency(&g_qpc);
 	ASSERT(g_qpc.QuadPart > 0);
