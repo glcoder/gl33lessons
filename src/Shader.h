@@ -4,8 +4,14 @@
 #include "common.h"
 #include "OpenGL.h"
 
-#define POSITION_LOCATION 0
-#define TEXCOORD_LOCATION 1
+#define VERT_POSITION    0
+#define VERT_TEXCOORD    1
+#define VERT_NORMAL      2
+#define VERT_COLOR       3
+#define VERT_TANGENT     4
+#define VERT_BINORMAL    5
+
+#define FRAG_OUTPUT0     0
 
 // типы шейдеров
 #define ST_VERTEX     0x01

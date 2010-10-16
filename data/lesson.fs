@@ -1,19 +1,23 @@
-// в момент загрузки шейдера будут добавлены следующие параметры:
-// #version 330 core
-
-// текстура
 uniform sampler2D colorTexture;
+uniform sampler2D normalTexture;
 
-// блок входящих параметров, которые переданы из вершинного шейдера
-in Fragment {
+in Vertex {
 	vec2 texcoord;
-} Frag;
+	vec3 normal;
+	vec3 lightDir;
+	vec3 viewDir;
+} Vert;
 
-// первый цвет пикселя
-layout(location = 0) out vec4 color;
+layout(location = FRAG_OUTPUT0) out vec4 color;
 
 void main(void)
 {
-	// получим цвет пикселя из текстуры по текстурным координатам
-	color = texture(colorTexture, Frag.texcoord);
+	vec3  bumpNormal = normalize((texture(normalTexture, Vert.texcoord).rgb - 0.5) * 2.0);
+	vec3  lightDir   = -normalize(Vert.lightDir);
+	float bumpDot    = max(dot(bumpNormal, lightDir), 0.0);
+	vec3  lightRefl  = normalize(bumpNormal * bumpDot * 2.0 - lightDir);
+	vec3  viewDir    = -normalize(Vert.viewDir);
+	float reflDot    = max(dot(lightRefl, viewDir), 0.0);
+	vec3  specular   = vec3(0.2) * pow(reflDot, 15.0);
+	color            = vec4(texture(colorTexture, Vert.texcoord).rgb * bumpDot + specular, 1.0);
 }

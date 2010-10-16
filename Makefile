@@ -7,7 +7,7 @@ SOURCE_DIR := src
 OBJ := $(BUILD_DIR)/common.o $(BUILD_DIR)/Logger.o \
 	$(BUILD_DIR)/OpenGL.o $(BUILD_DIR)/GLWindow.o \
 	$(BUILD_DIR)/Shader.o $(BUILD_DIR)/Texture.o \
-	$(BUILD_DIR)/main.o
+	$(BUILD_DIR)/Mesh.o $(BUILD_DIR)/main.o
 
 BIN := lesson04.exe
 

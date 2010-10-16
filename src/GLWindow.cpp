@@ -60,6 +60,9 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		0
 	};
 
+	// установим зерно генератора случайных чисел
+	srand((unsigned int)time(NULL));
+
 	// инциализация таймера
 	QueryPerformanceFrequency(&g_qpc);
 	ASSERT(g_qpc.QuadPart > 0);
@@ -183,7 +186,6 @@ void GLWindowDestroy()
 	if (g_window.fullScreen)
 	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
-		ShowCursor(TRUE);
 		g_window.fullScreen = false;
 	}
 
@@ -230,10 +232,7 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 
 	// если мы возвращаемся из полноэкранного режима
 	if (g_window.fullScreen && !fullScreen)
-	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
-		ShowCursor(TRUE);
-	}
 
 	g_window.fullScreen = fullScreen;
 
@@ -259,8 +258,6 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 	// если был запрошен полноэкранный режим и его удалось установить
 	if (g_window.fullScreen)
 	{
-		ShowCursor(FALSE);
-
 		style   = WS_POPUP;
 		exStyle = WS_EX_APPWINDOW | WS_EX_TOPMOST;
 
@@ -508,4 +505,9 @@ void InputSetCursorPos(int x, int y)
 
 	g_input.cursorPos[0] = x;
 	g_input.cursorPos[1] = y;
+}
+
+void InputShowCursor(bool visible)
+{
+	ShowCursor(visible ? TRUE : FALSE);
 }

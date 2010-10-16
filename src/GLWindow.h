@@ -63,4 +63,7 @@ void InputGetCursorPos(int *x, int *y);
 // задать положение курсора
 void InputSetCursorPos(int x, int y);
 
+// скрыть или показать курсор
+void InputShowCursor(bool visible);
+
 #endif /* GLWINDOW_H */

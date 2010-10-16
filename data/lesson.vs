@@ -1,25 +1,29 @@
-// в момент загрузки шейдера будут добавлены следующие параметры:
-// #version 330 core
-// #define POSITION_LOCATION 0
-// #define TEXCOORD_LOCATION 1
-
-// матрица преобразования координат, получаемая из программы
 uniform mat4 modelViewProjectionMatrix;
+uniform mat3 normalMatrix;
+uniform mat4 modelViewMatrix;
 
-// входящие атрибуты вершины
-layout(location = POSITION_LOCATION) in vec3 position;
-layout(location = TEXCOORD_LOCATION) in vec2 texcoord;
+layout(location = VERT_POSITION) in vec3 position;
+layout(location = VERT_TEXCOORD) in vec2 texcoord;
+layout(location = VERT_NORMAL)   in vec3 normal;
+layout(location = VERT_TANGENT)  in vec3 tangent;
+layout(location = VERT_BINORMAL) in vec3 binormal;
 
-// блок исходящих параметров, которые будут переданы в фрагментный шейдер
-out Fragment {
+out Vertex {
 	vec2 texcoord;
-} Frag;
+	vec3 normal;
+	vec3 lightDir;
+	vec3 viewDir;
+} Vert;
 
 void main(void)
 {
-	// перевод позиции вершины из локальных координат в однородные
-	gl_Position   = modelViewProjectionMatrix * vec4(position, 1.0);
+	vec4 vertex    = modelViewMatrix * vec4(position, 1.0);
+	mat3 tbnMatrix = transpose(mat3(tangent, binormal, normal));
+	Vert.texcoord  = texcoord;
+	Vert.normal    = normalize(normalMatrix * normal);
+	Vert.lightDir  = inverse(normalMatrix) * vec3(0.0, 0.0, -1.0);
+	Vert.lightDir  = normalize(tbnMatrix * Vert.lightDir);
+	Vert.viewDir   = vec3(0.0, 0.0, -1.0);
 
-	// передадим текстурные координаты в фрагментный шейдер
-	Frag.texcoord = texcoord;
+	gl_Position    = modelViewProjectionMatrix * vec4(position, 1.0);
 }

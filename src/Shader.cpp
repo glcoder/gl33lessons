@@ -6,13 +6,18 @@
 // набор параметров для вершинного шейдера
 static const char vertexShaderDefines[] =
 	"#version 330 core\n"
-	"#define " DEFINE_TO_STR(POSITION_LOCATION) "\n"
-	"#define " DEFINE_TO_STR(TEXCOORD_LOCATION) "\n"
+	"#define " DEFINE_TO_STR(VERT_POSITION) "\n"
+	"#define " DEFINE_TO_STR(VERT_TEXCOORD) "\n"
+	"#define " DEFINE_TO_STR(VERT_NORMAL) "\n"
+	"#define " DEFINE_TO_STR(VERT_COLOR) "\n"
+	"#define " DEFINE_TO_STR(VERT_TANGENT) "\n"
+	"#define " DEFINE_TO_STR(VERT_BINORMAL) "\n"
 	"\n";
 
 // набор параметров для фрагментного шейдера
 static const char fragmentShaderDefines[] =
 	"#version 330 core\n"
+	"#define " DEFINE_TO_STR(FRAG_OUTPUT0) "\n"
 	"\n";
 
 // проверка статуса шейдерной программы
