@@ -19,9 +19,63 @@
 
 // math constants
 const float math_epsilon = 1e-5f;
+const float math_pi      = 3.1415926536f;
+const float math_radians = math_pi / 180.0f;
+const float math_degrees = 180.0f / math_pi;
 
-const float math_radians = 3.14159265f / 180.0f;
-const float math_degrees = 180.0f / 3.14159265f;
+// functions
+#ifndef min
+inline float min(float a, float b)
+{
+	return (a < b ? a : b);
+}
+#endif
+
+#ifndef max
+inline float max(float a, float b)
+{
+	return (a < b ? b : a);
+}
+#endif
+
+// clamp x to [a,b]
+inline float clamp(float x, float a, float b)
+{
+	return (x < a ? a : ( x > b ? b : x ));
+}
+
+// linear interpolation
+inline float lerp(float a, float b, float t)
+{
+	return a + (b - a) * t;
+}
+
+// random number in [0,1]
+inline float unirand()
+{
+	return (float)rand() / (float)RAND_MAX;
+}
+
+// random number in [0,a]
+inline float unirand(float a)
+{
+	return a * unirand();
+}
+
+// random number in [a,b]
+inline float unirand(float a, float b)
+{
+	return lerp(a, b, unirand());
+}
+
+// random point on sphere
+inline const vec3 sphrand()
+{
+	float u = unirand(2.0f * math_pi);
+	float h = unirand(2.0f)  - 1.0f;
+	float r = sqrtf(1.0f - h * h);
+	return vec3(cosf(u) * r, sinf(u) * r, h);
+}
 
 // constants
 const vec2 vec2_zero(0, 0);
@@ -247,64 +301,23 @@ inline const quat arcball(const vec3 &from, const vec3 &to, float xcenter, float
 	return quat(cross(vf, vt), dot(vf, vt));
 }
 
-// transformation
-inline const mat4 rotation(float x, float y, float z)
+// shortest arc
+inline const quat shortarc(const vec3 &from, const vec3 &to)
 {
-	const float A = cosf(x), B = sinf(x), C = cosf(y),
-	            D = sinf(y), E = cosf(z), F = sinf(z);
-	const float AD = A * D, BD = B * D;
+	quat q(cross(from, to), dot(from, to));
 
-	return mat4(C * E, -C * F, D, 0,
-	            BD * E + A * F, -BD * F + A * E, -B * C, 0,
-	           -AD * E + B * F, AD * F + B * E, A * C, 0,
-	            0, 0, 0, 1);
-}
+	q = normalize(q);
+	q.w += 1.0f;
 
-inline const mat4 translation(float x, float y, float z)
-{
-	return mat4(1, 0, 0, x,
-	            0, 1, 0, y,
-	            0, 0, 1, z,
-	            0, 0, 0, 1);
-}
+	if (q.w <= math_epsilon)
+	{
+		if ((from.z * from.z) > (from.x * from.x))
+			q.set(0, from.z, -from.y, q.w);
+		else 
+			q.set(from.y, -from.x, 0, q.w);
+	}
 
-// projection
-inline const mat4 orthographic(float left, float right,
-	float bottom, float top, float zNear, float zFar)
-{
-	const float tx = - (right + left) / (right - left),
-	            ty = - (top + bottom) / (top - bottom),
-	            tz = - (zFar + zNear) / (zFar - zNear);
-
-	return mat4(2 / (right - left), 0, 0, tx,
-	            0, 2 / (top - bottom), 0, ty,
-	            0, 0, -2 / (zFar - zNear), tz,
-	            0, 0, 0, 1);
-}
-
-inline const mat4 perspective(float fov, float aspect, float zNear, float zFar)
-{
-	const float f = 1 / tanf(fov / 2),
-	            A = (zFar + zNear) / (zNear - zFar),
-	            B = (2 * zFar * zNear) / (zNear - zFar);
-
-	return mat4(f / aspect, 0, 0, 0,
-	            0, f, 0, 0,
-	            0, 0, A, B,
-	            0, 0, -1, 0);
-}
-
-// view mtrix
-inline const mat4 lookat(const vec3 &position, const vec3 &center, const vec3 &up)
-{
-	const vec3 f = normalize(position - center);
-	const vec3 s = normalize(cross(up, f));
-	const vec3 u = cross(f, s);
-
-	return mat4(s.x, s.y, s.z, -dot(s, position),
-	            u.x, u.y, u.z, -dot(u, position),
-	            f.x, f.y, f.z, -dot(f, position),
-	            0, 0, 0, 1);
+	return normalize(q);
 }
 
 #endif /* MATH3D_H */

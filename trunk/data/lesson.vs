@@ -1,25 +1,48 @@
-// в момент загрузки шейдера будут добавлены следующие параметры:
-// #version 330 core
-// #define POSITION_LOCATION 0
-// #define TEXCOORD_LOCATION 1
+#version 330 core
 
-// матрица преобразования координат, получаемая из программы
-uniform mat4 modelViewProjectionMatrix;
+#define VERT_POSITION 0
+#define VERT_TEXCOORD 1
+#define VERT_NORMAL   2
 
-// входящие атрибуты вершины
-layout(location = POSITION_LOCATION) in vec3 position;
-layout(location = TEXCOORD_LOCATION) in vec2 texcoord;
+layout(location = VERT_POSITION) in vec3 position;
+layout(location = VERT_TEXCOORD) in vec2 texcoord;
+layout(location = VERT_NORMAL)   in vec3 normal;
 
-// блок исходящих параметров, которые будут переданы в фрагментный шейдер
-out Fragment {
-	vec2 texcoord;
-} Frag;
+uniform struct Transform
+{
+	mat4 model;
+	mat4 modelViewProjection;
+	mat3 normal;
+	vec3 viewPosition;
+} transform;
+
+uniform struct PointLight
+{
+	vec4 position;
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	vec3 attenuation;
+} light;
+
+out Vertex {
+	vec2  texcoord;
+	vec3  normal;
+	vec3  lightDir;
+	vec3  viewDir;
+	float distance;
+} Vert;
 
 void main(void)
 {
-	// перевод позиции вершины из локальных координат в однородные
-	gl_Position   = modelViewProjectionMatrix * vec4(position, 1.0);
+	vec4 vertex   = transform.model * vec4(position, 1.0);
+	vec4 lightDir = light.position - vertex;
 
-	// передадим текстурные координаты в фрагментный шейдер
-	Frag.texcoord = texcoord;
+	Vert.texcoord = texcoord;
+	Vert.normal   = normalize(transform.normal * normal);
+	Vert.lightDir = vec3(normalize(lightDir));
+	Vert.viewDir  = normalize(transform.viewPosition - vec3(vertex));
+	Vert.distance = length(lightDir);
+
+	gl_Position = transform.modelViewProjection * vec4(position, 1.0);
 }

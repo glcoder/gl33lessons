@@ -7,6 +7,17 @@
 #include <cstring>
 #include <cassert>
 #include <cmath>
+#include <ctime>
+
+#define VERT_POSITION  0
+#define VERT_TEXCOORD  1
+#define VERT_NORMAL    2
+
+#define FRAG_OUTPUT0   0
+
+typedef float float2[2];
+typedef float float3[3];
+typedef float float4[4];
 
 #if defined(_MSC_VER)
 typedef __int8           int8_t;
