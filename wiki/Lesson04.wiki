@@ -83,10 +83,12 @@ void PointLightSetup(GLuint program, const PointLight &light)
   * Самостоятельное свечение (`emission`)
   * Коэффициент блеска (`shininess`)
 
+Дополнительно к параметрам материала будем хранить в нем текстуру объекта:
 {{{
 // Материал объекта
 struct Material
 {
+	GLuint texture;
 	vec4  ambient;
 	vec4  diffuse;
 	vec4  specular;
@@ -100,6 +102,7 @@ struct Material
 // параметры материала
 uniform struct Material
 {
+	sampler2D texture;
 	vec4  ambient;
 	vec4  diffuse;
 	vec4  specular;
@@ -124,7 +127,43 @@ void MaterialSetup(GLuint program, const Material &material)
 
 Камера в графической сцене представляет собой положение наблюдателя и то, как он видит сцену вокруг себя. Положение и направление взгляда задаются матрицей вида (`ViewMatrix`), а формат отображения задается матрицей проекции (`ProjectionMatrix`).
 
-В этом уроке используется простая камера с возможность перемещения по сцене и обзора окружающего пространства.
+В этом уроке используется простая камера с возможность перемещения по сцене и обзора окружающего пространства:
+{{{
+struct Camera
+{
+	vec3 position;
+	vec3 rotation;
+
+	mat4 projection;
+};
+}}}
+
+В шейдере для хранения всех данных о трансформации мы будем использовать следующую структуру:
+{{{
+uniform struct Transform
+{
+	mat4 model;
+	mat4 modelViewProjection;
+	mat3 normal;
+	vec3 viewPosition;
+} transform;
+}}}
+
+Для того, чтобы передать набор матриц трансформации вершин в шейдерную программу нам необходимо помимо камеры иметь матрицу преобразования объекта `Modelmatrix`, поэтому функция установки параметров камеры в шейдерную программу выглядит следующим образом:
+{{{
+void CameraSetup(GLuint program, const Camera &camera, const mat4 &model)
+{
+	mat4 modelViewProjection = camera.projection * (GLRotation(camera.rotation)
+		* GLTranslation(-camera.position)) * model;
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "transform.model"), 1, GL_TRUE, model.m);
+	glUniformMatrix4fv(glGetUniformLocation(program, "transform.modelViewProjection"), 1, GL_TRUE, modelViewProjection.m);
+	glUniformMatrix3fv(glGetUniformLocation(program, "transform.normal"), 1, GL_TRUE, mat3(model).m);
+	glUniform3fv(glGetUniformLocation(program, "transform.viewPosition"), 1, camera.position.v);
+}
+}}}
+
+Как вы можете видеть мы ввели дополнительную матрицу `normal`, она необходима для того, чтобы переводить нормали объекта из локальной системы координат объекта в мировую, это необходимо для расчета освещения.
 
 == Расчет освещения ===
 
@@ -145,50 +184,71 @@ void MaterialSetup(GLuint program, const Material &material)
 
 Нормаль к поверхности объекта и направление падающего света используются для расчета рассеянного (`diffuse`) и отраженного (`specular`) света, однако для расчета отраженного света необходимо еще дополнительно знать направление взгляда наблюдателя. Расстояние от вершины до источника освещения необходимо для расчета общего коэффициента затухания (`attenuation`).
 
+Прежде чем приступить к расчету освещения конкретной точки нам необходимо обработать вершины объекта, после чего передать обработанные данные из вершинного шейдера в фрагментный:
+{{{
+// координаты вершины в мировой системе координат
+vec4 vertex   = transform.model * vec4(position, 1.0);
+// направление от вершины на источник света в мировой системе координат
+vec4 lightDir = light.position - vertex;
+
+// текстурные координаты вершины
+Vert.texcoord = texcoord;
+// переведем нормаль в мировую систему координат
+Vert.normal   = normalize(transform.normal * normal);
+// направление на источник света
+Vert.lightDir = vec3(normalize(lightDir));
+// направление на наблюдателя в мировой системе координат
+Vert.viewDir  = normalize(transform.viewPosition - vec3(vertex));
+// расстояние от вершины до источника освещения
+Vert.distance = length(lightDir);
+
+// переведем координаты вершины из локальных в однородные
+gl_Position = transform.modelViewProjection * vec4(position, 1.0);
+}}}
+
 Итоговый алгоритм расчета освещенности одного пикселя выглядит так:
 {{{
-// параметры, переданные из вершинного шейдера
-in Vertex {
-	vec3  normal;
-	vec3  lightDir;
-	vec3  viewDir;
-	float distance;
-} Vert;
+// нормализуем полученные данные для коррекции интерполяции
+vec3 normal   = normalize(Vert.normal);
+vec3 lightDir = normalize(Vert.lightDir);
+vec3 viewDir  = normalize(Vert.viewDir);
 
-// итоговый цвет пикселя на экране
-layout(location = 0) out vec4 color;
+// цвет текселя
+vec4 textureColor = texture(material.texture, Vert.texcoord);
 
-void main(void)
-{
-	// с учетом того, что все передаваемые из вершинного шейдера
-	// параметры интерполируются по геометрии, необходимо их
-	// нормализовать в фрагментном шейдере, для повышения точности
-	// всех производимых расчетов
+// коэффициент затухания
+float attenuation = 1.0 / (light.attenuation[0] +
+	light.attenuation[1] * Vert.distance +
+	light.attenuation[2] * Vert.distance * Vert.distance);
 
-	vec3 normal   = normalize(Vert.normal);
-	vec3 lightDir = normalize(Vert.lightDir);
-	vec3 viewDir  = normalize(Vert.viewDir);
+// свечение материала
+color = material.emission;
 
-	// базовый цвет пикселя
-	vec4 objectColor = vec4(1.0);
+// добавим фоновое освещение
+color += textureColor * material.ambient * light.ambient * attenuation;
 
-	// итоговый коэффициент затухания
-	float attenuation = 1.0 / (light.attenuation[0] +
-		light.attenuation[1] * Vert.distance +
-		light.attenuation[2] * Vert.distance * Vert.distance);
+// добавим рассеянный свет
+float NdotL = max(dot(normal, normalize(lightDir)), 0.0);
+color += textureColor * material.diffuse * light.diffuse * NdotL * attenuation;
 
-	// собственое свечение материала
-	color = objectColor * material.emission;
-
-	// добавим фоновой свет
-	color += objectColor * material.ambient * light.ambient * attenuation;
-
-	// добавим рассеянный свет
-	float NdotL = max(dot(normal, normalize(lightDir)), 0.0);
-	color += objectColor * material.diffuse * light.diffuse * NdotL * attenuation;
-
-	// добавим отраженный свет
-	float RdotV = pow(max(dot(reflect(-lightDir, normal), viewDir), 0.0), material.shininess);
-	color += objectColor * material.specular * light.specular * RdotV * attenuation;
-}
+// добавим отраженный свет
+float RdotV = pow(max(dot(reflect(-lightDir, normal), viewDir), 0.0), material.shininess);
+color += textureColor * material.specular * light.specular * RdotV * attenuation;
 }}}
+
+== Скриншот урока ==
+
+http://img822.imageshack.us/img822/9845/013956.jpg
+
+== Полезные ссылки ==
+
+  # [http://compgraphics.info/3D/lighting/phong_reflection_model.php Модель отражения Фонга]
+  # [http://fly.cc.fer.hr/~unreal/theredbook/chapter06.html OpenGL Red Book Lighting]
+  # [http://www.lighthouse3d.com/opengl/glsl/index.php?lights GLSL Tutorial Lighting]
+  # [http://www.ozone3d.net/tutorials/glsl_lighting_phong.php Lighting with GLSL Phong model]
+
+== Исходный код ==
+
+Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
+  * Используя SVN [http://code.google.com/p/gl33lessons/source/browse/#svn/branches/lesson04 lesson04]
+  * Скачав архив [http://code.google.com/p/gl33lessons/downloads/detail?name=lesson04.zip lesson04.zip]
