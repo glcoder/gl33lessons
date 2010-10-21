@@ -13,7 +13,11 @@ struct mat4;
 
 struct mat3
 {
-	float m[9];
+	union
+	{
+		struct { float r1[3], r2[3], r3[3]; };
+		float m[9];
+	};
 
 	mat3() {}
 

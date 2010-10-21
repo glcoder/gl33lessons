@@ -64,8 +64,8 @@ GLuint TextureCreateFromTGA(const char *fileName)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// установим параметры "оборачиваниея" текстуры - отсутствие оборачивания
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	// загрузим данные о цвете в текущую автивную текстуру
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, header->width, header->height, 0, format,
@@ -83,5 +83,6 @@ GLuint TextureCreateFromTGA(const char *fileName)
 void TextureDestroy(GLuint texture)
 {
 	// освободим занятый индекс текстуры
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glDeleteTextures(1, &texture);
 }

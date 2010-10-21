@@ -168,6 +168,22 @@
 				RelativePath=".\src\Texture.h"
 				>
 			</File>
+			<File
+				RelativePath=".\src\Mesh.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Mesh.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Camera.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Camera.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

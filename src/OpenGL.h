@@ -46,6 +46,8 @@ extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 extern PFNGLBINDBUFFERPROC    glBindBuffer;
 extern PFNGLBUFFERDATAPROC    glBufferData;
 extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
+extern PFNGLMAPBUFFERPROC     glMapBuffer;
+extern PFNGLUNMAPBUFFERPROC   glUnmapBuffer;
 // Shaders
 extern PFNGLCREATEPROGRAMPROC     glCreateProgram;
 extern PFNGLDELETEPROGRAMPROC     glDeleteProgram;
@@ -62,14 +64,18 @@ extern PFNGLATTACHSHADERPROC      glAttachShader;
 extern PFNGLDETACHSHADERPROC      glDetachShader;
 extern PFNGLGETSHADERIVPROC       glGetShaderiv;
 extern PFNGLGETSHADERINFOLOGPROC  glGetShaderInfoLog;
-// Shaders attributes
+// Attributes
 extern PFNGLGETATTRIBLOCATIONPROC        glGetAttribLocation;
 extern PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer;
 extern PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray;
 extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
-// Shaders uniforms
+// Uniforms
 extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
+extern PFNGLUNIFORMMATRIX3FVPROC   glUniformMatrix3fv;
 extern PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv;
 extern PFNGLUNIFORM1IPROC          glUniform1i;
+extern PFNGLUNIFORM3FVPROC         glUniform1fv;
+extern PFNGLUNIFORM3FVPROC         glUniform3fv;
+extern PFNGLUNIFORM4FVPROC         glUniform4fv;
 
 #endif /* OPENGL_H */
