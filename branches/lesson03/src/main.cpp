@@ -88,14 +88,27 @@ static void Matrix4Translation(Matrix4 M, float x, float y, float z)
 // построение матрицы вращения
 static void Matrix4Rotation(Matrix4 M, float x, float y, float z)
 {
-	const float A = cosf(x), B = sinf(x), C = cosf(y),
-	            D = sinf(y), E = cosf(z), F = sinf(z);
-	const float AD = A * D, BD = B * D;
+	const float cx = cosf(x), sx = sinf(x),
+	            cy = cosf(y), sy = sinf(y),
+	            cz = cosf(z), sz = sinf(z);
 
-	M[ 0] = C * E;           M[ 1] = -C * F;          M[ 2] = D;      M[ 3] = 0;
-	M[ 4] = BD * E + A * F;  M[ 5] = -BD * F + A * E; M[ 6] = -B * C; M[ 7] = 0;
-	M[ 8] = -AD * E + B * F; M[ 9] = AD * F + B * E;  M[10] = A * C;  M[11] = 0;
-	M[12] = 0;               M[13] = 0;               M[14] = 0;      M[15] = 1;
+	// rotationX * rotationY * rotationZ
+	M[ 0] = cy * cz;
+	M[ 1] = -cy * sz;
+	M[ 2] = sy;
+	M[ 3] = 0;
+	M[ 4] = cx * sz + sx * cz * sy;
+	M[ 5] = cx * cz - sx * sy * sz;
+	M[ 6] = -cy * sx;
+	M[ 7] = 0;
+	M[ 8] = sx * sz - cx * cz * sy;
+	M[ 9] = cz * sx + cx * sy * sz;
+	M[10] = cx * cy;
+	M[11] = 0;
+	M[12] = 0;
+	M[13] = 0;
+	M[14] = 0;
+	M[15] = 1;
 }
 
 // перемножение двух матриц
