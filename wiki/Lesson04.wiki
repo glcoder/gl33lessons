@@ -228,7 +228,7 @@ color = material.emission;
 color += textureColor * material.ambient * light.ambient * attenuation;
 
 // добавим рассеянный свет
-float NdotL = max(dot(normal, normalize(lightDir)), 0.0);
+float NdotL = max(dot(normal, lightDir), 0.0);
 color += textureColor * material.diffuse * light.diffuse * NdotL * attenuation;
 
 // добавим отраженный свет
