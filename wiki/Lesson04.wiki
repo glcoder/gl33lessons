@@ -3,6 +3,8 @@
 
 = Урок 4 - Свет, камера, материал! Часть 1 =
 
+http://img697.imageshack.us/img697/9640/200521.jpg
+
 == Введение ==
 
 Еще одной важной темой для графических приложений и игр является освещение. Подробно останавливаться на физическом смысле и математической модели освещения я не буду, подобных статей с описаниями хватает на просторах интернета, в конце урока будут приведены ссылки на некоторые из таких статей.
@@ -236,10 +238,6 @@ color += textureColor * material.diffuse * light.diffuse * NdotL * attenuation;
 float RdotV = pow(max(dot(reflect(-lightDir, normal), viewDir), 0.0), material.shininess);
 color += textureColor * material.specular * light.specular * RdotV * attenuation;
 }}}
-
-== Скриншот урока ==
-
-http://img822.imageshack.us/img822/9845/013956.jpg
 
 == Полезные ссылки ==
 
