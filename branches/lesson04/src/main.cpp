@@ -37,10 +37,10 @@ struct Material
 void PointLightSetup(GLuint program, const PointLight &light)
 {
 	// установка параметров
-	glUniform4fv(glGetUniformLocation(program, "light.position"), 1, light.position.v);
-	glUniform4fv(glGetUniformLocation(program, "light.ambient"), 1, light.ambient.v);
-	glUniform4fv(glGetUniformLocation(program, "light.diffuse"), 1, light.diffuse.v);
-	glUniform4fv(glGetUniformLocation(program, "light.specular"), 1, light.specular.v);
+	glUniform4fv(glGetUniformLocation(program, "light.position"),    1, light.position.v);
+	glUniform4fv(glGetUniformLocation(program, "light.ambient"),     1, light.ambient.v);
+	glUniform4fv(glGetUniformLocation(program, "light.diffuse"),     1, light.diffuse.v);
+	glUniform4fv(glGetUniformLocation(program, "light.specular"),    1, light.specular.v);
 	glUniform3fv(glGetUniformLocation(program, "light.attenuation"), 1, light.attenuation.v);
 }
 
@@ -53,15 +53,16 @@ void MaterialSetup(GLuint program, const Material &material)
 	glUniform1i(glGetUniformLocation(program, "material.texture"), 0);
 
 	// установка параметров
-	glUniform4fv(glGetUniformLocation(program, "material.ambient"), 1, material.ambient.v);
-	glUniform4fv(glGetUniformLocation(program, "material.diffuse"), 1, material.diffuse.v);
+	glUniform4fv(glGetUniformLocation(program, "material.ambient"),  1, material.ambient.v);
+	glUniform4fv(glGetUniformLocation(program, "material.diffuse"),  1, material.diffuse.v);
 	glUniform4fv(glGetUniformLocation(program, "material.specular"), 1, material.specular.v);
 	glUniform4fv(glGetUniformLocation(program, "material.emission"), 1, material.emission.v);
+
 	glUniform1fv(glGetUniformLocation(program, "material.shininess"), 1, &material.shininess);
 }
 
 // индекс шейдерной программы
-static GLuint shaderProgram = 0, colorTexture = 0;
+static GLuint shaderProgram = 0, colorTexture = 0, blankTexture = 0;
 
 // положение курсора и его смещение с последнего кадра
 static int cursorPos[2] = {0}, rotateDelta[2] = {0}, moveDelta[2] = {0};
@@ -115,8 +116,9 @@ bool GLWindowInit(const GLWindow *window)
 	pointLight.specular.set(1.0f, 1.0f, 1.0f, 1.0f);
 	pointLight.attenuation.set(0.5f, 0.0f, 0.02f);
 
-	// загрузим текстуру
+	// загрузим текстуры
 	colorTexture = TextureCreateFromTGA("data/texture.tga");
+	blankTexture = TextureCreateFromTGA("data/blank.tga");
 
 	// создадим примитивы и настроим материалы
 	// вращающийся тор
@@ -139,7 +141,7 @@ bool GLWindowInit(const GLWindow *window)
 
 	// сфера на месте источника освещения
 	MeshCreateSphere(meshes[2], pointLight.position, 0.2f);
-	materials[2].texture = colorTexture;
+	materials[2].texture = blankTexture;
 	materials[2].ambient.set(0.2f, 0.2f, 0.2f, 1.0f);
 	materials[2].diffuse.set(0.8f, 0.8f, 0.8f, 1.0f);
 	materials[2].specular.set(0.0f, 0.0f, 0.0f, 1.0f);
@@ -168,6 +170,7 @@ void GLWindowClear(const GLWindow *window)
 	ShaderProgramDestroy(shaderProgram);
 
 	TextureDestroy(colorTexture);
+	TextureDestroy(blankTexture);
 
 	InputShowCursor(true);
 }

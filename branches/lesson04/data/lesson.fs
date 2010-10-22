@@ -2,6 +2,7 @@
 
 #define FRAG_OUTPUT0 0
 
+// параметры точеченого источника освещения
 uniform struct PointLight
 {
 	vec4 position;
@@ -11,6 +12,7 @@ uniform struct PointLight
 	vec3 attenuation;
 } light;
 
+// параметры материала
 uniform struct Material
 {
 	sampler2D texture;
@@ -22,6 +24,7 @@ uniform struct Material
 	float shininess;
 } material;
 
+// параметры полученные из вершинного шейдера
 in Vertex {
 	vec2  texcoord;
 	vec3  normal;
@@ -39,25 +42,25 @@ void main(void)
 	vec3 lightDir = normalize(Vert.lightDir);
 	vec3 viewDir  = normalize(Vert.viewDir);
 
-	// цвет текселя
-	vec4 textureColor = texture(material.texture, Vert.texcoord);
-
 	// коэффициент затухания
 	float attenuation = 1.0 / (light.attenuation[0] +
 		light.attenuation[1] * Vert.distance +
 		light.attenuation[2] * Vert.distance * Vert.distance);
 
-	// свечение материала
+	// добавим собственное свечение материала
 	color = material.emission;
 
 	// добавим фоновое освещение
-	color += textureColor * material.ambient * light.ambient * attenuation;
+	color += material.ambient * light.ambient * attenuation;
 
 	// добавим рассеянный свет
-	float NdotL = max(dot(normal, normalize(lightDir)), 0.0);
-	color += textureColor * material.diffuse * light.diffuse * NdotL * attenuation;
+	float NdotL = max(dot(normal, lightDir), 0.0);
+	color += material.diffuse * light.diffuse * NdotL * attenuation;
 
 	// добавим отраженный свет
 	float RdotV = pow(max(dot(reflect(-lightDir, normal), viewDir), 0.0), material.shininess);
-	color += textureColor * material.specular * light.specular * RdotV * attenuation;
+	color += material.specular * light.specular * RdotV * attenuation;
+
+	// вычислим итоговый цвет пикселя на экране с учетом текстуры
+	color *= texture(material.texture, Vert.texcoord);
 }
