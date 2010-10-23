@@ -294,13 +294,16 @@ void main(void)
 	color += material.diffuse * light.diffuse * NdotL * attenuation;
 
 	// добавим отраженный свет
-	float RdotV = max(pow(dot(reflect(-lightDir, normal), viewDir), material.shininess), 0.0);
-	color += material.specular * light.specular * RdotV * attenuation;
+	float RdotV = max(dot(reflect(-lightDir, normal), viewDir), 0.0);
+	if (RdotV > 0.0)
+		color += material.specular * light.specular * pow(RdotV, material.shininess) * attenuation;
 
 	// вычислим итоговый цвет пикселя на экране с учетом текстуры
 	color *= texture(material.texture, Vert.texcoord);
 }
 }}}
+
+Обратите внимание, что значение `RdotV` проверяется, прежде чем вычисления пойдут дальше, дело в том, что, согласно спецификации, у функции `pow(x,y)` есть неприятная особенность, результат будет неопределенным, если `x < 0` либо если `x == 0` и `y <= 0`. таким образом, чтобы избежать ситуации с неопределенным результатом, мы проверяем `RdotV` на предмет неравенства 0.
 
 Результат работы программы вы уже видели на скриншоте, представленном в начале этого урока. В следующем уроке мы рассмотрим другие типы источников освещения - направленны и прожектор, а также подробнее остановимся на том, для чего нужны лэйауты (`layout`) в шейдерах и как сделать простое переключение шейдерных программ "на лету".
 
