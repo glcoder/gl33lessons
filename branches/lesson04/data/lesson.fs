@@ -58,8 +58,9 @@ void main(void)
 	color += material.diffuse * light.diffuse * NdotL * attenuation;
 
 	// добавим отраженный свет
-	float RdotV = max(pow(dot(reflect(-lightDir, normal), viewDir), material.shininess), 0.0);
-	color += material.specular * light.specular * RdotV * attenuation;
+	float RdotV = max(dot(reflect(-lightDir, normal), viewDir), 0.0);
+	if (RdotV > 0.0)
+		color += material.specular * light.specular * pow(RdotV, material.shininess) * attenuation;
 
 	// вычислим итоговый цвет пикселя на экране с учетом текстуры
 	color *= texture(material.texture, Vert.texcoord);
