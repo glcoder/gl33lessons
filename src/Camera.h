@@ -17,8 +17,11 @@ struct Camera
 
 void CameraCreate(Camera &camera, float x, float y, float z);
 void CameraPerspective(Camera &camera, float fov, float aspect, float zNear, float zFar);
+void CameraOrtho(Camera &camera, float left, float right,
+	float bottom, float top, float zNear, float zFar);
 void CameraRotate(Camera &camera, float x, float y, float z);
 void CameraMove(Camera &camera, float x, float y, float z);
 void CameraSetup(GLuint program, const Camera &camera, const mat4 &model);
+void CameraSetupLight(GLuint program, const Camera &camera);
 
 #endif /* CAMERA_H */

@@ -55,6 +55,12 @@ void MeshDestroy(Mesh &mesh)
 	glDeleteVertexArrays(1, &mesh.vao);
 }
 
+void MeshCreateQuad(Mesh &mesh, const vec3 &position, float size)
+{
+	#include "models/quad.h"
+	return MeshCreate(mesh, position, vertices, vcount, indices, icount);
+}
+
 void MeshCreatePlane(Mesh &mesh, const vec3 &position, float size)
 {
 	#include "models/plane.h"

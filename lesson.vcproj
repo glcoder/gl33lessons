@@ -70,7 +70,7 @@
 				Name="VCLinkerTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalDependencies="opengl32.lib"
-				OutputFile="lesson04.exe"
+				OutputFile="lesson05.exe"
 				LinkIncremental="1"
 				GenerateManifest="false"
 				ManifestFile="build\lesson.manifest"
@@ -182,6 +182,22 @@
 			</File>
 			<File
 				RelativePath=".\src\Camera.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Light.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Light.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Material.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\Material.h"
 				>
 			</File>
 		</Filter>
