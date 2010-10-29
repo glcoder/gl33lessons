@@ -30,7 +30,8 @@ uniform struct Material
 } material;
 
 // параметры полученные из вершинного шейдера
-in Vertex {
+in Vertex
+{
 	vec2 texcoord;
 	vec4 smcoord;
 	vec3 normal;

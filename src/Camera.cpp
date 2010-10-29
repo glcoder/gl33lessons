@@ -4,7 +4,14 @@ void CameraCreate(Camera &camera, float x, float y, float z)
 {
 	// зададим позицию камеры и еденичную матрицу проекции
 	camera.position   = vec3(x, y, z);
+	camera.rotation   = vec3_zero;
 	camera.projection = mat4_identity;
+}
+
+void CameraLookAt(Camera &camera, const vec3 &position, const vec3 &center, const vec3 &up)
+{
+	camera.rotation = GLToEuler(GLLookAt(position, center, up));
+	camera.position = position;
 }
 
 void CameraPerspective(Camera &camera, float fov, float aspect, float zNear, float zFar)
@@ -31,7 +38,7 @@ void CameraMove(Camera &camera, float x, float y, float z)
 	// сначала нам надо перевести вектор направления в локальные координаты камеры
 	// для этого нам надо инвертировать матрицу вращения камеры и умножить ее на вектор
 	// однако для матрицы вращения транспонирование дает тот же результат что инвертирование
-	vec3 move = transpose(mat3(GLRotation(camera.rotation))) * vec3(x, y, z);
+	vec3 move = transpose(mat3(GLFromEuler(camera.rotation))) * vec3(x, y, z);
 
 	camera.position += move;
 }
@@ -39,7 +46,7 @@ void CameraMove(Camera &camera, float x, float y, float z)
 void CameraSetup(GLuint program, const Camera &camera, const mat4 &model)
 {
 	// расчитаем необходимые матрицы
-	mat4 view           = GLRotation(camera.rotation) * GLTranslation(-camera.position);
+	mat4 view           = GLFromEuler(camera.rotation) * GLTranslation(-camera.position);
 	mat4 viewProjection = camera.projection * view;
 	mat3 normal         = transpose(mat3(inverse(model)));
 
@@ -61,7 +68,7 @@ void CameraSetupLight(GLuint program, const Camera &camera)
 {
 	// расчитаем необходимые матрицы
 	mat4 bias(0.5, 0.0f, 0.0f, 0.5, 0.0f, 0.5, 0.0f, 0.5, 0.0f, 0.0f, 0.5, 0.5, 0.0f, 0.0f, 0.0f, 1.0f);
-	mat4 view           = GLRotation(camera.rotation) * GLTranslation(-camera.position);
+	mat4 view           = GLFromEuler(camera.rotation) * GLTranslation(-camera.position);
 	mat4 viewProjection = bias * camera.projection * view;
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "transform.light"), 1, GL_TRUE, viewProjection.m);
