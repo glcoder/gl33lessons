@@ -3,6 +3,9 @@
 
 #include "common.h"
 #include "OpenGL.h"
+#include "Light.h"
+#include "Material.h"
+#include "Camera.h"
 
 // типы шейдеров
 #define ST_VERTEX     0x01
