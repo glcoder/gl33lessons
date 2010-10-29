@@ -32,7 +32,8 @@ uniform struct Light
 } light;
 
 // параметры для фрагментного шейдера
-out Vertex {
+out Vertex
+{
 	vec2 texcoord;
 	vec4 smcoord;
 	vec3 normal;

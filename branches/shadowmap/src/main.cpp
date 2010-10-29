@@ -2,7 +2,7 @@
 #include <windows.h>
 
 #define DT_WIDTH  512
-#define DT_HEIGHT 512
+#define DT_HEIGHT DT_WIDTH
 
 #include "common.h"
 #include "math/math3d.h"
@@ -28,7 +28,7 @@ static const uint32_t meshCount = 3;
 static Mesh     meshes[meshCount], orthoMesh;
 static Material materials[meshCount], orthoMaterial;
 
-static float3 cubeRotation = {0.0f}, torusRotation = {0.0f};
+static float3 torusRotation = {0.0f};
 
 static Light  light;
 static Camera mainCamera, orthoCamera, lightCamera;
@@ -57,16 +57,6 @@ bool GLWindowInit(const GLWindow *window)
 	// собираем созданную и загруженную шейдерную программу
 	if (!ShaderProgramLink(shaderProgramRender))
 		return false;
-/*
-	// сделаем шейдерную программу активной
-	ShaderProgramBind(shaderProgramRender);
-
-	glUniform1i(glGetUniformLocation(shaderProgramRender, "depthTexture"), 1);
-
-	// проверка шейдерной программы на корректность
-	if (!ShaderProgramValidate(shaderProgramRender))
-		return false;
-*/
 
 	// создадим и загрузим шейдерную программу
 	if ((shaderProgramPrepare = ShaderProgramCreateFromFile("data/prepare", ST_VERTEX | ST_FRAGMENT)) == 0)
@@ -75,14 +65,6 @@ bool GLWindowInit(const GLWindow *window)
 	// собираем созданную и загруженную шейдерную программу
 	if (!ShaderProgramLink(shaderProgramPrepare))
 		return false;
-/*
-	// сделаем шейдерную программу активной
-	ShaderProgramBind(shaderProgramPrepare);
-
-	// проверка шейдерной программы на корректность
-	if (!ShaderProgramValidate(shaderProgramPrepare))
-		return false;
-*/
 
 	// создадим и загрузим шейдерную программу
 	if ((shaderProgramOrtho = ShaderProgramCreateFromFile("data/ortho", ST_VERTEX | ST_FRAGMENT)) == 0)
@@ -91,17 +73,9 @@ bool GLWindowInit(const GLWindow *window)
 	// собираем созданную и загруженную шейдерную программу
 	if (!ShaderProgramLink(shaderProgramOrtho))
 		return false;
-/*
-	// сделаем шейдерную программу активной
-	ShaderProgramBind(shaderProgramOrtho);
-
-	// проверка шейдерной программы на корректность
-	if (!ShaderProgramValidate(shaderProgramOrtho))
-		return false;
-*/
 
 	// настроим точечный источник освещения
-	light.position.set(3.0f, 3.0f, 3.0f, 1.0f);
+	light.position.set(5.0f, 5.0f, 5.0f, 1.0f);
 	light.ambient.set(0.1f, 0.1f, 0.1f, 1.0f);
 	light.diffuse.set(1.0f, 1.0f, 1.0f, 1.0f);
 	light.specular.set(1.0f, 1.0f, 1.0f, 1.0f);
@@ -131,25 +105,14 @@ bool GLWindowInit(const GLWindow *window)
 	materials[1].emission.set(0.0f, 0.0f, 0.0f, 1.0f);
 	materials[1].shininess = 20.0f;
 
-	// вращающийся куб
-	MeshCreateTorus(meshes[2], vec3(0.0f, 1.2f, 0.0f), 0.8f);
+	// вращающийся тор
+	MeshCreateTorus(meshes[2], vec3(0.0f, 1.2f, 0.0f), 1.0f);
 	materials[2].texture = colorTexture;
 	materials[2].ambient.set(0.2f, 0.2f, 0.2f, 1.0f);
 	materials[2].diffuse.set(1.0f, 0.5f, 0.3f, 1.0f);
 	materials[2].specular.set(0.8f, 0.8f, 0.8f, 1.0f);
 	materials[2].emission.set(0.0f, 0.0f, 0.0f, 1.0f);
 	materials[2].shininess = 20.0f;
-
-	/*
-	// сфера на месте источника освещения
-	MeshCreateSphere(meshes[2], light.position, 0.2f);
-	materials[2].texture = blankTexture;
-	materials[2].ambient.set(0.2f, 0.2f, 0.2f, 1.0f);
-	materials[2].diffuse.set(0.8f, 0.8f, 0.8f, 1.0f);
-	materials[2].specular.set(0.0f, 0.0f, 0.0f, 1.0f);
-	materials[2].emission.set(1.0f, 1.0f, 1.0f, 1.0f);
-	materials[2].shininess = 0.0f;
-	*/
 
 	MeshCreateQuad(orthoMesh, vec3(0.0f, 0.0f, 0.0f), 1.0f);
 	orthoMesh.rotation = mat3(GLRotationX(90.0f));
@@ -159,15 +122,14 @@ bool GLWindowInit(const GLWindow *window)
 
 	// создадим и настроим камеру
 	const float aspectRatio = (float)window->width / (float)window->height;
-	CameraCreate(mainCamera, 0.0f, 0.0f, 12.0f);
+	CameraLookAt(mainCamera, vec3_z * 10.0f, vec3_zero, vec3_y);
 	CameraPerspective(mainCamera, 45.0f, aspectRatio, 0.5f, 50.0f);
 
-	CameraCreate(orthoCamera, 0.0f, 0.0f, 0.0f);
+	CameraLookAt(orthoCamera, vec3_zero, -vec3_z, vec3_y);
 	CameraOrtho(orthoCamera, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
-	CameraCreate(lightCamera, light.position.x*3.0f, light.position.y*3.0f, light.position.z*3.0f);
-	CameraPerspective(lightCamera, 45.0f, aspectRatio, 0.5f, 50.0f);
-	CameraRotate(lightCamera, 0.0f, -45.0f, -30.0f);
+	CameraLookAt(lightCamera, light.position, -light.position, vec3_y);
+	CameraOrtho(lightCamera, -6.0f, 6.0f, -6.0f, 6.0f, -50.0f, 50.0f);
 
 	glGenFramebuffers(1, &depthFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
@@ -279,28 +241,18 @@ void GLWindowUpdate(const GLWindow *window, double deltaTime)
 	ASSERT(deltaTime >= 0.0); // проверка на возможность бага
 
 	// зададим углы поворота куба с учетом времени
-	if ((cubeRotation[0] += 30.0f * (float)deltaTime) > 360.0f)
-		cubeRotation[0] -= 360.0f;
-
-	if ((cubeRotation[1] += 15.0f * (float)deltaTime) > 360.0f)
-		cubeRotation[1] -= 360.0f;
-
-	if ((cubeRotation[2] += 7.0f * (float)deltaTime) > 360.0f)
-		cubeRotation[2] -= 360.0f;
-
-	// зададим углы поворота куба с учетом времени
-	if ((torusRotation[0] -= 30.0f * (float)deltaTime) < 360.0f)
-		torusRotation[0] += 360.0f;
+	if ((torusRotation[0] += 30.0f * (float)deltaTime) > 360.0f)
+		torusRotation[0] -= 360.0f;
 
 	if ((torusRotation[1] += 15.0f * (float)deltaTime) > 360.0f)
 		torusRotation[1] -= 360.0f;
 
-	if ((torusRotation[2] -= 7.0f * (float)deltaTime) < 360.0f)
-		torusRotation[2] += 360.0f;
+	if ((torusRotation[2] += 7.0f * (float)deltaTime) > 360.0f)
+		torusRotation[2] -= 360.0f;
 
 	// зададим матрицу вращения куба
-	meshes[1].rotation = GLRotation(cubeRotation[0], cubeRotation[1], cubeRotation[2]);
-	meshes[2].rotation = GLRotation(torusRotation[0], torusRotation[1], torusRotation[2]);
+	meshes[1].rotation = GLFromEuler(torusRotation[0], torusRotation[1], torusRotation[2]);
+	meshes[2].rotation = GLFromEuler(-torusRotation[0], torusRotation[1], -torusRotation[2]);
 
 	// вращаем камеру
 	CameraRotate(mainCamera, (float)deltaTime * rotateDelta[1], (float)deltaTime * rotateDelta[0], 0.0f);

@@ -41,6 +41,8 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 	DWORD                 style, exStyle;
 	int                   x, y, format;
 
+	srand(time(0));
+
 	// обнуляем стейт окна
 	memset(&g_window, 0, sizeof(g_window));
 
