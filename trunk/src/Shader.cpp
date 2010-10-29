@@ -1,5 +1,24 @@
 #include "Shader.h"
 
+// немного магии :)
+#define DEFINE_TO_STR_HELPER(x) #x
+#define DEFINE_TO_STR(x)        "#define " #x " " DEFINE_TO_STR_HELPER(x) "\n"
+
+// набор параметров для вершинного шейдера
+static const char vertexShaderDefines[] =
+	"#version 330 core\n"
+	DEFINE_TO_STR(VERT_POSITION)
+	DEFINE_TO_STR(VERT_TEXCOORD)
+	DEFINE_TO_STR(VERT_NORMAL)
+	"\n";
+
+// набор параметров для фрагментного шейдера
+static const char fragmentShaderDefines[] =
+	"#version 330 core\n"
+	DEFINE_TO_STR(FRAG_OUTPUT0)
+	"\n";
+
+
 // проверка статуса шейдерной программы
 GLint ShaderProgramStatus(GLuint program, GLenum param)
 {
@@ -83,8 +102,12 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 			return 0;
 		}
 
+		// добавим к коду вершинного шейдера параметры
+		const GLchar *source[2] = {(const GLchar*)vertexShaderDefines, (const GLchar*)shaderSource};
+		const GLint  length[2] = {sizeof(vertexShaderDefines), sourceLength};
+
 		// зададим шейдеру исходный код и скомпилируем его
-		glShaderSource(shader, 1, (const GLchar**)&shaderSource, (const GLint*)&sourceLength);
+		glShaderSource(shader, 2, source, length);
 		glCompileShader(shader);
 
 		delete[] shaderSource;
@@ -127,8 +150,12 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 			return 0;
 		}
 
+		// добавим к коду фрагментного шейдера параметры
+		const GLchar *source[2] = {(const GLchar*)fragmentShaderDefines, (const GLchar*)shaderSource};
+		const GLint  length[2] = {sizeof(fragmentShaderDefines), sourceLength};
+
 		// зададим шейдеру исходный код и скомпилируем его
-		glShaderSource(shader, 1, (const GLchar**)&shaderSource, (const GLint*)&sourceLength);
+		glShaderSource(shader, 2, source, length);
 		glCompileShader(shader);
 
 		delete[] shaderSource;
