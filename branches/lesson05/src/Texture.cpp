@@ -80,39 +80,6 @@ GLuint TextureCreateFromTGA(const char *fileName)
 	return texture;
 }
 
-GLuint TextureCreateDepth(GLsizei width, GLsizei height)
-{
-	ASSERT(width);
-	ASSERT(height);
-
-	GLuint texture;
-
-	// запросим у OpenGL свободный индекс текстуры
-	glGenTextures(1, &texture);
-
-	// сделаем текстуру активной
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	// установим параметры фильтрации текстуры - линейная фильтрация
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// установим параметры "оборачиваниея" текстуры - отсутствие оборачивания
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// необходимо для использования depth-текстуры как shadow map
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-
-	// соаздем "пустую" текстуру под depth-данные
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-	// проверим на наличие ошибок
-	OPENGL_CHECK_FOR_ERRORS();
-
-	return texture;
-}
-
 void TextureDestroy(GLuint texture)
 {
 	// освободим занятый индекс текстуры
