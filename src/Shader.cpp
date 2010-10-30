@@ -104,7 +104,7 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 
 		// добавим к коду вершинного шейдера параметры
 		const GLchar *source[2] = {(const GLchar*)vertexShaderDefines, (const GLchar*)shaderSource};
-		const GLint  length[2] = {sizeof(vertexShaderDefines), sourceLength};
+		const GLint  length[2] = {sizeof(vertexShaderDefines) - 1, sourceLength};
 
 		// зададим шейдеру исходный код и скомпилируем его
 		glShaderSource(shader, 2, source, length);
@@ -152,7 +152,7 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 
 		// добавим к коду фрагментного шейдера параметры
 		const GLchar *source[2] = {(const GLchar*)fragmentShaderDefines, (const GLchar*)shaderSource};
-		const GLint  length[2] = {sizeof(fragmentShaderDefines), sourceLength};
+		const GLint  length[2] = {sizeof(fragmentShaderDefines) - 1, sourceLength};
 
 		// зададим шейдеру исходный код и скомпилируем его
 		glShaderSource(shader, 2, source, length);
