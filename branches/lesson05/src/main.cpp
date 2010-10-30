@@ -1,9 +1,6 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
-#define DT_WIDTH  512
-#define DT_HEIGHT DT_WIDTH
-
 #include "common.h"
 #include "math/math3d.h"
 #include "math/mathgl.h"
