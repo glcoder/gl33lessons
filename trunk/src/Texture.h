@@ -13,4 +13,7 @@ GLuint TextureCreateDepth(GLsizei width, GLsizei height);
 // удаляет текстуру
 void TextureDestroy(GLuint texture);
 
+// установка текстуры в текстурный юнит и шейдер
+void TextureSetup(GLuint program, GLint unit, const GLchar *name, GLuint texture);
+
 #endif /* TEXTURE_H */

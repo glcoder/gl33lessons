@@ -70,7 +70,7 @@
 				Name="VCLinkerTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalDependencies="opengl32.lib"
-				OutputFile="lesson05.exe"
+				OutputFile="lesson06.exe"
 				LinkIncremental="1"
 				GenerateManifest="false"
 				ManifestFile="build\lesson.manifest"

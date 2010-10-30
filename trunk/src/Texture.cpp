@@ -119,3 +119,10 @@ void TextureDestroy(GLuint texture)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDeleteTextures(1, &texture);
 }
+
+void TextureSetup(GLuint program, GLint unit, const GLchar *name, GLuint texture)
+{
+	glActiveTexture(GL_TEXTURE0 + unit);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glUniform1i(glGetUniformLocation(program, name), unit);
+}

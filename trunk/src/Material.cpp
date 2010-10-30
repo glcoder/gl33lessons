@@ -13,9 +13,7 @@ void MaterialDefault(Material &material)
 
 void MaterialSetup(GLuint program, const Material &material)
 {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, material.texture);
-	glUniform1i(glGetUniformLocation(program, "material.texture"), 0);
+	TextureSetup(program, 0, "material.texture", material.texture);
 
 	glUniform4fv(glGetUniformLocation(program, "material.ambient"), 1, material.ambient.v);
 	glUniform4fv(glGetUniformLocation(program, "material.diffuse"), 1, material.diffuse.v);

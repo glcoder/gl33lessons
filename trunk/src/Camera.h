@@ -20,5 +20,6 @@ void CameraOrtho(Camera &camera, float left, float right,
 void CameraRotate(Camera &camera, float x, float y, float z);
 void CameraMove(Camera &camera, float x, float y, float z);
 void CameraSetup(GLuint program, const Camera &camera, const mat4 &model);
+void CameraSetupLightMatrix(GLuint program, const Camera &camera);
 
 #endif /* CAMERA_H */

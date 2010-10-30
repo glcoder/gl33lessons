@@ -63,3 +63,13 @@ void CameraSetup(GLuint program, const Camera &camera, const mat4 &model)
 	// передаем позицию наблюдателя (камеры) в шейдерную программу
 	glUniform3fv(glGetUniformLocation(program, "transform.viewPosition"), 1, camera.position.v);
 }
+
+void CameraSetupLightMatrix(GLuint program, const Camera &camera)
+{
+	// расчитаем необходимые матрицы
+	mat4 bias(0.5, 0.0f, 0.0f, 0.5, 0.0f, 0.5, 0.0f, 0.5, 0.0f, 0.0f, 0.5, 0.5, 0.0f, 0.0f, 0.0f, 1.0f);
+	mat4 view           = GLFromEuler(camera.rotation) * GLTranslation(-camera.position);
+	mat4 viewProjection = bias * camera.projection * view;
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "transform.light"), 1, GL_TRUE, viewProjection.m);
+}

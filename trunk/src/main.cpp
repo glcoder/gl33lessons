@@ -1,7 +1,7 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
-#define DT_WIDTH  512
+#define DT_WIDTH  1024
 #define DT_HEIGHT DT_WIDTH
 
 #include "common.h"
@@ -17,21 +17,28 @@
 #include "Material.h"
 
 // индекс шейдерной программы
-static GLuint pointLightProgram = 0, directionalLightProgram = 0,
-	spotLightProgram = 0, colorTexture = 0;
+static GLuint depthProgram = 0, quadProgram = 0, shadowmapProgram = 0;
+
+// индексы текстур
+static GLuint colorTexture = 0, depthTexture = 0;
+
+// индекс FBO
+static GLuint depthFBO = 0;
 
 // положение курсора и его смещение с последнего кадра
 static int cursorPos[2] = {0}, rotateDelta[2] = {0}, moveDelta[2] = {0};
 
 static const uint32_t meshCount = 3;
 
-static Mesh     meshes[meshCount];
-static Material materials[meshCount];
+static Mesh     meshes[meshCount], quadMesh;
+static Material materials[meshCount], quadMaterial;
 
 static float3 torusRotation = {0.0f};
 
-static Light  *currentLight = NULL, pointLight, directionalLight, spotLight;
-static Camera mainCamera;
+static Light  directionalLight;
+static Camera mainCamera, quadCamera, lightCamera;
+
+static bool doRenderQuad = false;
 
 // инициализаця OpenGL
 bool GLWindowInit(const GLWindow *window)
@@ -50,45 +57,34 @@ bool GLWindowInit(const GLWindow *window)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	// создадим и загрузим шейдерные программы для разных истчоников освещения
-	if ((pointLightProgram = ShaderProgramCreateFromFile("data/pointLight", ST_VERTEX | ST_FRAGMENT)) == 0
-		|| !ShaderProgramLink(pointLightProgram))
+	// создадим и загрузим шейдерные программы
+	if ((depthProgram = ShaderProgramCreateFromFile("data/depth", ST_VERTEX | ST_FRAGMENT)) == 0
+		|| !ShaderProgramLink(depthProgram))
 	{
 		return false;
 	}
 
-	if ((directionalLightProgram = ShaderProgramCreateFromFile("data/directionalLight", ST_VERTEX | ST_FRAGMENT)) == 0
-		|| !ShaderProgramLink(directionalLightProgram))
+	if ((quadProgram = ShaderProgramCreateFromFile("data/quad", ST_VERTEX | ST_FRAGMENT)) == 0
+		|| !ShaderProgramLink(quadProgram))
 	{
 		return false;
 	}
 
-	if ((spotLightProgram = ShaderProgramCreateFromFile("data/spotLight", ST_VERTEX | ST_FRAGMENT)) == 0
-		|| !ShaderProgramLink(spotLightProgram))
+	if ((shadowmapProgram = ShaderProgramCreateFromFile("data/shadowmap", ST_VERTEX | ST_FRAGMENT)) == 0
+		|| !ShaderProgramLink(shadowmapProgram))
 	{
 		return false;
 	}
-
-	// настроим точечный источник освещения
-	LightDefault(pointLight, LT_POINT);
-	pointLight.position.set(3.0f, 3.0f, 3.0f, 1.0f);
-	pointLight.attenuation.set(0.5f, 0.0f, 0.02f);
 
 	// настроим направленный источник освещения
 	LightDefault(directionalLight, LT_DIRECTIONAL);
 	directionalLight.position.set(3.0f, 3.0f, 3.0f, 0.0f);
 
-	// настроим прожектор
-	LightDefault(spotLight, LT_SPOT);
-	spotLight.position.set(3.0f, 5.0f, 3.0f, 1.0f);
-	spotLight.spotDirection.set(-1.0f, -2.0f, -1.0f);
-	spotLight.spotCosCutoff = cosf(45.0f * math_radians);
-	spotLight.spotExponent = 5.0f;
-
-	currentLight = &pointLight;
-
 	// загрузим текстуры
 	colorTexture = TextureCreateFromTGA("data/texture.tga");
+
+	// создадим текстуру для хранения глубины
+	depthTexture = TextureCreateDepth(DT_WIDTH, DT_HEIGHT);
 
 	// создадим примитивы и настроим материалы
 	// плоскость под вращающимся тором
@@ -113,10 +109,37 @@ bool GLWindowInit(const GLWindow *window)
 	materials[2].specular.set(0.8f, 0.8f, 0.8f, 1.0f);
 	materials[2].shininess = 20.0f;
 
+	// настроим полноэкранный прямоугольник
+	MeshCreateQuad(quadMesh, vec3(0.0f, 0.0f, 0.0f), 1.0f);
+	quadMesh.rotation = mat3(GLRotationX(90.0f));
+
 	// создадим и настроим камеру
 	const float aspectRatio = (float)window->width / (float)window->height;
-	CameraLookAt(mainCamera, vec3(10.0f, 10.0f, 15.0f), vec3_zero, vec3_y);
+	CameraLookAt(mainCamera, vec3(-5.0f, 10.0f, 10.0f), vec3_zero, vec3_y);
 	CameraPerspective(mainCamera, 45.0f, aspectRatio, 0.5f, 100.0f);
+
+	// камера источника света
+	CameraLookAt(lightCamera, directionalLight.position, -directionalLight.position, vec3_y);
+	CameraOrtho(lightCamera, -5.0f, 5.0f, -5.0f, 5.0f, -10.0f, 10.0f);
+
+	// камера полноэкранного прямоугольника, для рендера текстуры глубины
+	CameraLookAt(quadCamera, vec3_zero, -vec3_z, vec3_y);
+	CameraOrtho(quadCamera, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+
+	// создаем FBO для рендера глубины в текстуру
+	glGenFramebuffers(1, &depthFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+
+	GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+		LOG_ERROR("glCheckFramebufferStatus error %d\n", fboStatus);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// проверим не было ли ошибок
 	OPENGL_CHECK_FOR_ERRORS();
@@ -132,13 +155,46 @@ void GLWindowClear(const GLWindow *window)
 	for (uint32_t i = 0; i < meshCount; ++i)
 		MeshDestroy(meshes[i]);
 
-	ShaderProgramDestroy(pointLightProgram);
-	ShaderProgramDestroy(directionalLightProgram);
-	ShaderProgramDestroy(spotLightProgram);
+	ShaderProgramDestroy(depthProgram);
+	ShaderProgramDestroy(quadProgram);
+	ShaderProgramDestroy(shadowmapProgram);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &depthFBO);
 
 	TextureDestroy(colorTexture);
+	TextureDestroy(depthTexture);
 
 	InputShowCursor(true);
+}
+
+void RenderScene(GLuint program, const Camera &camera)
+{
+	// делаем шейдерную программу активной
+	ShaderProgramBind(program);
+
+	LightSetup(program, directionalLight);
+	CameraSetupLightMatrix(program, lightCamera);
+
+	TextureSetup(program, 1, "depthTexture", depthTexture);
+
+	for (uint32_t i = 0; i < meshCount; ++i)
+	{
+		CameraSetup(program, camera, MeshGetModelMatrix(meshes[i]));
+		MaterialSetup(program, materials[i]);
+		MeshRender(meshes[i]);
+	}
+}
+
+void RenderQuad(GLuint program, const Camera &camera)
+{
+	// делаем шейдерную программу активной
+	ShaderProgramBind(program);
+
+	TextureSetup(program, 1, "depthTexture", depthTexture);
+
+	CameraSetup(program, camera, MeshGetModelMatrix(quadMesh));
+	MeshRender(quadMesh);
 }
 
 // функция рендера
@@ -146,31 +202,25 @@ void GLWindowRender(const GLWindow *window)
 {
 	ASSERT(window);
 
-	GLuint currentProgram = 0;
+	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+	glViewport(0, 0, DT_WIDTH, DT_HEIGHT);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthMask(GL_TRUE);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glCullFace(GL_FRONT);
 
-	// выберем шейдерную программу для рендеринга
-	switch (currentLight->type)
-	{
-		case LT_POINT:       currentProgram = pointLightProgram;       break;
-		case LT_DIRECTIONAL: currentProgram = directionalLightProgram; break;
-		case LT_SPOT:        currentProgram = spotLightProgram;        break;
-		default: ASSERT(currentProgram);
-	}
+	RenderScene(depthProgram, lightCamera);
 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, window->width, window->height);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glCullFace(GL_BACK);
 
-	ShaderProgramBind(currentProgram);
-
-	// передадим параметры источника освещения в шейдерную программу
-	LightSetup(currentProgram, *currentLight);
-
-	// вывод объектов сцены на экран
-	for (uint32_t i = 0; i < meshCount; ++i)
-	{
-		CameraSetup(currentProgram, mainCamera, MeshGetModelMatrix(meshes[i]));
-		MaterialSetup(currentProgram, materials[i]);
-		MeshRender(meshes[i]);
-	}
+	if (doRenderQuad)
+		RenderQuad(quadProgram, quadCamera);
+	else
+		RenderScene(shadowmapProgram, mainCamera);
 
 	// проверка на ошибки
 	OPENGL_CHECK_FOR_ERRORS();
@@ -219,14 +269,8 @@ void GLWindowInput(const GLWindow *window)
 	if (InputIsKeyPressed(VK_ESCAPE))
 		GLWindowDestroy();
 
-	if (InputIsKeyPressed(VK_F1))
-		currentLight = &pointLight;
-
-	if (InputIsKeyPressed(VK_F2))
-		currentLight = &directionalLight;
-
-	if (InputIsKeyPressed(VK_F3))
-		currentLight = &spotLight;
+	if (InputIsKeyPressed(VK_SPACE))
+		doRenderQuad = !doRenderQuad;
 
 	// переключение между оконным и полноэкранным режимом
 	// осуществляется по нажатию комбинации Alt+Enter
@@ -249,9 +293,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	int result;
 
-	LoggerCreate("lesson05.log");
+	LoggerCreate("lesson06.log");
 
-	if (!GLWindowCreate("lesson05", 800, 600, false))
+	if (!GLWindowCreate("lesson06", 800, 600, false))
 		return 1;
 
 	result = GLWindowMainLoop();
