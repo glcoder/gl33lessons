@@ -77,11 +77,5 @@ extern PFNGLUNIFORM1IPROC          glUniform1i;
 extern PFNGLUNIFORM1FVPROC         glUniform1fv;
 extern PFNGLUNIFORM3FVPROC         glUniform3fv;
 extern PFNGLUNIFORM4FVPROC         glUniform4fv;
-// FBO
-extern PFNGLBINDFRAMEBUFFERPROC        glBindFramebuffer;
-extern PFNGLDELETEFRAMEBUFFERSPROC     glDeleteFramebuffers;
-extern PFNGLGENFRAMEBUFFERSPROC        glGenFramebuffers;
-extern PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
-extern PFNGLFRAMEBUFFERTEXTURE2DPROC   glFramebufferTexture2D;
 
 #endif /* OPENGL_H */
