@@ -1,3 +1,4 @@
+// текстурный самплер карты глубины
 uniform sampler2DShadow depthTexture;
 
 // параметры точеченого источника освещения
@@ -59,7 +60,8 @@ void main(void)
 	vec3 viewDir  = normalize(Vert.viewDir);
 
 	// коэффициент затенения
-	float shadow  = PCF(Vert.smcoord);
+	//float shadow  = PCF(Vert.smcoord);
+	float shadow = textureProj(depthTexture, Vert.smcoord);
 
 	// добавим собственное свечение материала
 	color = material.emission;

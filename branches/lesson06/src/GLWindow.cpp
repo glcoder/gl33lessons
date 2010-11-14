@@ -180,7 +180,7 @@ void GLWindowDestroy()
 {
 	g_window.running = g_window.active = false;
 
-	GLWindowClear(&g_window);
+	GLWindowClear(g_window);
 
 	// восстановим разрешение экрана
 	if (g_window.fullScreen)
@@ -313,7 +313,7 @@ int GLWindowMainLoop()
 	double deltaTime, beginFrameTime, fixedTimeStep;
 
 	// пользовательская инициализация
-	g_window.running = g_window.active = GLWindowInit(&g_window);
+	g_window.running = g_window.active = GLWindowInit(g_window);
 
 	deltaTime      = 0.0;
 	fixedTimeStep  = 1.0 / 100.0;
@@ -338,13 +338,13 @@ int GLWindowMainLoop()
 		beginFrameTime = GetTimerTicks();
 
 		// обработка ввода
-		GLWindowInput(&g_window);
+		GLWindowInput(g_window);
 
 		// если окно в рабочем режиме и активно
 		if (g_window.running && g_window.active)
 		{
 			// рендер сцены
-			GLWindowRender(&g_window);
+			GLWindowRender(g_window);
 			glFinish();
 			SwapBuffers(g_hDC);
 
@@ -352,7 +352,7 @@ int GLWindowMainLoop()
 			deltaTime += GetTimerTicks() - beginFrameTime;
 			while (deltaTime >= fixedTimeStep)
 			{
-				GLWindowUpdate(&g_window, deltaTime);
+				GLWindowUpdate(g_window, deltaTime);
 				deltaTime -= fixedTimeStep;
 			}
 		}

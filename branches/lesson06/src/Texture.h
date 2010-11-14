@@ -10,6 +10,9 @@ GLuint TextureCreateFromTGA(const char *fileName);
 // создание "пустой" текстуры для хранения depth-данных
 GLuint TextureCreateDepth(GLsizei width, GLsizei height);
 
+// создание фейковой текстуры залитой белым цветом
+GLuint TextureCreateFake();
+
 // удаляет текстуру
 void TextureDestroy(GLuint texture);
 

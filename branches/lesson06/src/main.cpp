@@ -1,9 +1,6 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
-#define DT_WIDTH  1024
-#define DT_HEIGHT DT_WIDTH
-
 #include "common.h"
 #include "math/math3d.h"
 #include "math/mathgl.h"
@@ -16,6 +13,10 @@
 #include "Light.h"
 #include "Material.h"
 
+// вспомогательный макрос
+#define LOAD_SHADER(name) \
+	ShaderProgramCreateFromFile("data/" name ".vs", "data/" name ".fs")
+
 // индекс шейдерной программы
 static GLuint depthProgram = 0, quadProgram = 0, shadowmapProgram = 0;
 
@@ -26,14 +27,14 @@ static GLuint colorTexture = 0, depthTexture = 0;
 static GLuint depthFBO = 0;
 
 // положение курсора и его смещение с последнего кадра
-static int cursorPos[2] = {0}, rotateDelta[2] = {0}, moveDelta[2] = {0};
+static int cursorPos[2] = {0,0}, rotateDelta[2] = {0,0}, moveDelta[2] = {0,0};
 
 static const uint32_t meshCount = 3;
 
 static Mesh     meshes[meshCount], quadMesh;
 static Material materials[meshCount], quadMaterial;
 
-static float3 torusRotation = {0.0f};
+static float3 torusRotation = {0.0f, 0.0f, 0.0f};
 
 static Light  directionalLight;
 static Camera mainCamera, quadCamera, lightCamera;
@@ -41,15 +42,13 @@ static Camera mainCamera, quadCamera, lightCamera;
 static bool doRenderQuad = false;
 
 // инициализаця OpenGL
-bool GLWindowInit(const GLWindow *window)
+bool GLWindowInit(const GLWindow &window)
 {
-	ASSERT(window);
-
 	// спрячем курсор
 	InputShowCursor(false);
 
 	// устанавливаем вьюпорт на все окно
-	glViewport(0, 0, window->width, window->height);
+	glViewport(0, 0, window.width, window.height);
 
 	// параметры OpenGL
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -58,20 +57,9 @@ bool GLWindowInit(const GLWindow *window)
 	glEnable(GL_CULL_FACE);
 
 	// создадим и загрузим шейдерные программы
-	if ((depthProgram = ShaderProgramCreateFromFile("data/depth", ST_VERTEX | ST_FRAGMENT)) == 0
-		|| !ShaderProgramLink(depthProgram))
-	{
-		return false;
-	}
-
-	if ((quadProgram = ShaderProgramCreateFromFile("data/quad", ST_VERTEX | ST_FRAGMENT)) == 0
-		|| !ShaderProgramLink(quadProgram))
-	{
-		return false;
-	}
-
-	if ((shadowmapProgram = ShaderProgramCreateFromFile("data/shadowmap", ST_VERTEX | ST_FRAGMENT)) == 0
-		|| !ShaderProgramLink(shadowmapProgram))
+	if ((depthProgram = LOAD_SHADER("depth")) == 0
+		|| (quadProgram = LOAD_SHADER("quad")) == 0
+		|| (shadowmapProgram = LOAD_SHADER("shadowmap")) == 0)
 	{
 		return false;
 	}
@@ -84,7 +72,7 @@ bool GLWindowInit(const GLWindow *window)
 	colorTexture = TextureCreateFromTGA("data/texture.tga");
 
 	// создадим текстуру для хранения глубины
-	depthTexture = TextureCreateDepth(DT_WIDTH, DT_HEIGHT);
+	depthTexture = TextureCreateDepth(window.width * 2, window.height * 2);
 
 	// создадим примитивы и настроим материалы
 	// плоскость под вращающимся тором
@@ -112,9 +100,11 @@ bool GLWindowInit(const GLWindow *window)
 	// настроим полноэкранный прямоугольник
 	MeshCreateQuad(quadMesh, vec3(0.0f, 0.0f, 0.0f), 1.0f);
 	quadMesh.rotation = mat3(GLRotationX(90.0f));
+	MaterialDefault(quadMaterial);
+	quadMaterial.texture = depthTexture;
 
 	// создадим и настроим камеру
-	const float aspectRatio = (float)window->width / (float)window->height;
+	const float aspectRatio = (float)window.width / (float)window.height;
 	CameraLookAt(mainCamera, vec3(-5.0f, 10.0f, 10.0f), vec3_zero, vec3_y);
 	CameraPerspective(mainCamera, 45.0f, aspectRatio, 0.5f, 100.0f);
 
@@ -128,16 +118,23 @@ bool GLWindowInit(const GLWindow *window)
 
 	// создаем FBO для рендера глубины в текстуру
 	glGenFramebuffers(1, &depthFBO);
+	// делаем созданный FBO текущим
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 
+	// отключаем вывод цвета в текущий FBO
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+	// указываем для текущего FBO текстуру, куда следует производить рендер глубины
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
 
-	GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-		LOG_ERROR("glCheckFramebufferStatus error %d\n", fboStatus);
+	// проверим текущий FBO на корректность
+	GLenum fboStatus;
+	if ((fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		LOG_ERROR("glCheckFramebufferStatus error 0x%X\n", fboStatus);
+		return false;
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -148,9 +145,9 @@ bool GLWindowInit(const GLWindow *window)
 }
 
 // очистка OpenGL
-void GLWindowClear(const GLWindow *window)
+void GLWindowClear(const GLWindow &window)
 {
-	ASSERT(window);
+	(void)window;
 
 	for (uint32_t i = 0; i < meshCount; ++i)
 		MeshDestroy(meshes[i]);
@@ -177,6 +174,7 @@ void RenderScene(GLuint program, const Camera &camera)
 	CameraSetupLightMatrix(program, lightCamera);
 
 	TextureSetup(program, 1, "depthTexture", depthTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 
 	for (uint32_t i = 0; i < meshCount; ++i)
 	{
@@ -191,19 +189,17 @@ void RenderQuad(GLuint program, const Camera &camera)
 	// делаем шейдерную программу активной
 	ShaderProgramBind(program);
 
-	TextureSetup(program, 1, "depthTexture", depthTexture);
-
 	CameraSetup(program, camera, MeshGetModelMatrix(quadMesh));
+	MaterialSetup(program, quadMaterial);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 	MeshRender(quadMesh);
 }
 
 // функция рендера
-void GLWindowRender(const GLWindow *window)
+void GLWindowRender(const GLWindow &window)
 {
-	ASSERT(window);
-
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-	glViewport(0, 0, DT_WIDTH, DT_HEIGHT);
+	glViewport(0, 0, window.width * 2, window.height * 2);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glDepthMask(GL_TRUE);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -212,7 +208,7 @@ void GLWindowRender(const GLWindow *window)
 	RenderScene(depthProgram, lightCamera);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, window->width, window->height);
+	glViewport(0, 0, window.width, window.height);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glCullFace(GL_BACK);
@@ -227,10 +223,11 @@ void GLWindowRender(const GLWindow *window)
 }
 
 // функция обновления
-void GLWindowUpdate(const GLWindow *window, double deltaTime)
+void GLWindowUpdate(const GLWindow &window, double deltaTime)
 {
-	ASSERT(window);
 	ASSERT(deltaTime >= 0.0); // проверка на возможность бага
+
+	(void)window;
 
 	// зададим углы поворота куба с учетом времени
 	if ((torusRotation[0] += 30.0f * (float)deltaTime) > 360.0f)
@@ -258,12 +255,10 @@ void GLWindowUpdate(const GLWindow *window, double deltaTime)
 }
 
 // функция обработки ввода с клавиатуры и мыши
-void GLWindowInput(const GLWindow *window)
+void GLWindowInput(const GLWindow &window)
 {
-	ASSERT(window);
-
 	// центр окна
-	int32_t xCenter = window->width / 2, yCenter = window->height / 2;
+	int32_t xCenter = window.width / 2, yCenter = window.height / 2;
 
 	// выход из приложения по кнопке Esc
 	if (InputIsKeyPressed(VK_ESCAPE))
@@ -276,8 +271,8 @@ void GLWindowInput(const GLWindow *window)
 	// осуществляется по нажатию комбинации Alt+Enter
 	if (InputIsKeyDown(VK_MENU) && InputIsKeyPressed(VK_RETURN))
 	{
-		GLWindowSetSize(window->width, window->height, !window->fullScreen);
-		//InputShowCursor(window->fullScreen ? false : true);
+		GLWindowSetSize(window.width, window.height, !window.fullScreen);
+		//InputShowCursor(window.fullScreen ? false : true);
 	}
 
 	moveDelta[0] = 10 * ((int)InputIsKeyDown('D') - (int)InputIsKeyDown('A'));

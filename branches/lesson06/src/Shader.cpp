@@ -61,15 +61,11 @@ GLint ShaderStatus(GLuint shader, GLenum param)
 	return status;
 }
 
-GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
+GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 {
-	ASSERT(fileName);
-	ASSERT(type);
-
 	GLuint   program, shader;
 	uint8_t  *shaderSource;
 	uint32_t sourceLength;
-	char     shaderName[0x100];
 
 	// слздадим шейдерную программу
 	if ((program = glCreateProgram()) == 0)
@@ -78,10 +74,8 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 		return 0;
 	}
 
-	memset(shaderName, 0, 0x100);
-
 	// если необходимо создать вершинный шейдер
-	if (type & ST_VERTEX)
+	if (vsName)
 	{
 		// создадим вершинный шейдер
 		if ((shader = glCreateShader(GL_VERTEX_SHADER)) == 0)
@@ -91,11 +85,8 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 			return 0;
 		}
 
-		// имя вершинного шейдера
-		snprintf(shaderName, 0xFF, "%s.vs", fileName);
-
 		// загрузим вершинный шейдер
-		if (!LoadFile(shaderName, true, &shaderSource, &sourceLength))
+		if (!LoadFile(vsName, true, &shaderSource, &sourceLength))
 		{
 			glDeleteShader(shader);
 			glDeleteProgram(program);
@@ -129,7 +120,7 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 	}
 
 	// если необходимо создать фрагментный шейдер
-	if (type & ST_FRAGMENT)
+	if (fsName)
 	{
 		// создадим вершинный шейдер
 		if ((shader = glCreateShader(GL_FRAGMENT_SHADER)) == 0)
@@ -139,11 +130,8 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 			return 0;
 		}
 
-		// имя фрагментного шейдера
-		snprintf(shaderName, 0xFF, "%s.fs", fileName);
-
 		// загрузим фрагментный шейдер
-		if (!LoadFile(shaderName, true, &shaderSource, &sourceLength))
+		if (!LoadFile(fsName, true, &shaderSource, &sourceLength))
 		{
 			glDeleteShader(shader);
 			glDeleteProgram(program);
@@ -178,7 +166,7 @@ GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 
 	OPENGL_CHECK_FOR_ERRORS();
 
-	return program;
+	return ShaderProgramLink(program) ? program : 0;
 }
 
 void ShaderProgramDestroy(GLuint program)
