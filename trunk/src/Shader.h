@@ -7,13 +7,8 @@
 #include "Material.h"
 #include "Camera.h"
 
-// типы шейдеров
-#define ST_VERTEX     0x01
-#define ST_FRAGMENT   0x02
-
-// создает шейдерную программу и загружает шейдеры указанные в type из файла fileName
-// вершинный шейдер загружается из файла fileName.vs, фрагментный fileName.fs
-GLuint ShaderProgramCreateFromFile(const char *fileName, int type);
+// создает шейдерную программу, загружает шейдеры из файлов и собирает шейдерную программу
+GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName);
 
 // делает указанную шейдерную программу неактивной и удаляет ее
 void ShaderProgramDestroy(GLuint program);

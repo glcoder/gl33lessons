@@ -82,6 +82,6 @@ extern PFNGLBINDFRAMEBUFFERPROC        glBindFramebuffer;
 extern PFNGLDELETEFRAMEBUFFERSPROC     glDeleteFramebuffers;
 extern PFNGLGENFRAMEBUFFERSPROC        glGenFramebuffers;
 extern PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
-extern PFNGLFRAMEBUFFERTEXTURE2DPROC   glFramebufferTexture2D;
+extern PFNGLFRAMEBUFFERTEXTUREPROC     glFramebufferTexture;
 
 #endif /* OPENGL_H */
