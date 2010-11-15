@@ -66,10 +66,18 @@ void CameraSetup(GLuint program, const Camera &camera, const mat4 &model)
 
 void CameraSetupLightMatrix(GLuint program, const Camera &camera)
 {
+	// матрица сдвига текстурных координат
+	static const mat4 bias(
+		0.5f, 0.0f, 0.0f, 0.5f,
+		0.0f, 0.5f, 0.0f, 0.5f,
+		0.0f, 0.0f, 0.5f, 0.5f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	);
+
 	// расчитаем необходимые матрицы
-	mat4 bias(0.5, 0.0f, 0.0f, 0.5, 0.0f, 0.5, 0.0f, 0.5, 0.0f, 0.0f, 0.5, 0.5, 0.0f, 0.0f, 0.0f, 1.0f);
 	mat4 view           = GLFromEuler(camera.rotation) * GLTranslation(-camera.position);
 	mat4 viewProjection = bias * camera.projection * view;
 
+	// передадим матрицу источника освещения в шейдерную программу
 	glUniformMatrix4fv(glGetUniformLocation(program, "transform.light"), 1, GL_TRUE, viewProjection.m);
 }
