@@ -24,6 +24,62 @@ struct Posteffect
 	GLuint     program;
 };
 
+struct ScreenQuad
+{
+	GLuint vao, vbo;
+};
+
+void ScreenQuadCreate(ScreenQuad &quad)
+{
+	struct ScreenQuadVertex
+	{
+		float3 position;
+		float2 texcoord;
+	};
+
+	const ScreenQuadVertex vertices[6] = {
+		{{-1.0f, -1.0f, 0.0f}, {0.0f,0.0f}},
+		{{ 1.0f, -1.0f, 0.0f}, {1.0f,0.0f}},
+		{{-1.0f,  1.0f, 0.0f}, {0.0f,1.0f}},
+		{{ 1.0f, -1.0f, 0.0f}, {1.0f,0.0f}},
+		{{ 1.0f,  1.0f, 0.0f}, {1.0f,1.0f}},
+		{{-1.0f,  1.0f, 0.0f}, {0.0f,1.0f}}
+	};
+
+	glGenVertexArrays(1, &quad.vao);
+	glBindVertexArray(quad.vao);
+
+	glGenBuffers(1, &quad.vbo);
+
+	glBindBuffer(GL_ARRAY_BUFFER, quad.vbo);
+	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(ScreenQuadVertex), vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(VERT_POSITION, 3, GL_FLOAT, GL_FALSE,
+		sizeof(ScreenQuadVertex), (const GLvoid*)0);
+	glEnableVertexAttribArray(VERT_POSITION);
+
+	glVertexAttribPointer(VERT_TEXCOORD, 2, GL_FLOAT, GL_FALSE,
+		sizeof(ScreenQuadVertex), (const GLvoid*)(sizeof(float3)));
+	glEnableVertexAttribArray(VERT_TEXCOORD);
+
+	OPENGL_CHECK_FOR_ERRORS();
+}
+
+void ScreenQuadRender(const ScreenQuad &quad)
+{
+	glBindVertexArray(quad.vao);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void ScreenQuadDestroy(ScreenQuad &quad)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &quad.vbo);
+
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &quad.vao);
+}
+
 // индекс шейдерной программы
 static GLuint depthProgram = 0, shadowmapProgram = 0, posteffectProgram = 0;
 
@@ -38,13 +94,15 @@ static int cursorPos[2] = {0,0}, rotateDelta[2] = {0,0}, moveDelta[2] = {0,0};
 
 static const uint32_t meshCount = 3, posteffectsCount = 7;
 
-static Mesh     meshes[meshCount], quadMesh;
+static ScreenQuad quad;
+
+static Mesh     meshes[meshCount];
 static Material materials[meshCount];
 
 static float3 torusRotation = {0.0f, 0.0f, 0.0f};
 
 static Light  directionalLight;
-static Camera mainCamera, quadCamera, lightCamera;
+static Camera mainCamera, lightCamera;
 
 static Posteffect posteffects[posteffectsCount] = {
 	{VK_F1, "data/normal.fs",     0},
@@ -126,9 +184,8 @@ bool GLWindowInit(const GLWindow &window)
 	materials[2].specular.set(0.8f, 0.8f, 0.8f, 1.0f);
 	materials[2].shininess = 20.0f;
 
-	// настроим полноэкранный прямоугольник
-	MeshCreateQuad(quadMesh, vec3(0.0f, 0.0f, 0.0f), 1.0f);
-	quadMesh.rotation = mat3(GLRotationX(90.0f));
+	// создадим экранный прямоугольник
+	ScreenQuadCreate(quad);
 
 	// создадим и настроим камеру
 	const float aspectRatio = (float)window.width / (float)window.height;
@@ -138,10 +195,6 @@ bool GLWindowInit(const GLWindow &window)
 	// камера источника света
 	CameraLookAt(lightCamera, directionalLight.position, -directionalLight.position, vec3_y);
 	CameraOrtho(lightCamera, -5.0f, 5.0f, -5.0f, 5.0f, -10.0f, 10.0f);
-
-	// камера полноэкранного прямоугольника, для рендера текстуры глубины
-	CameraLookAt(quadCamera, vec3_zero, -vec3_z, vec3_y);
-	CameraOrtho(quadCamera, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
 	GLenum fboStatus;
 
@@ -197,6 +250,8 @@ void GLWindowClear(const GLWindow &window)
 	for (uint32_t i = 0; i < meshCount; ++i)
 		MeshDestroy(meshes[i]);
 
+	ScreenQuadDestroy(quad);
+
 	ShaderProgramDestroy(depthProgram);
 	ShaderProgramDestroy(shadowmapProgram);
 
@@ -235,18 +290,6 @@ void RenderScene(GLuint program, const Camera &camera)
 	}
 }
 
-void RenderQuad(GLuint program, const Camera &camera)
-{
-	// делаем шейдерную программу активной
-	ShaderProgramBind(program);
-
-	TextureSetup(program, 0, "colorTexture", posteffectTexture);
-	TextureSetup(program, 2, "depthTexture", posteffectDepthTexture);
-
-	CameraSetup(program, camera, MeshGetModelMatrix(quadMesh));
-	MeshRender(quadMesh);
-}
-
 // функция рендера
 void GLWindowRender(const GLWindow &window)
 {
@@ -271,7 +314,13 @@ void GLWindowRender(const GLWindow &window)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	RenderQuad(posteffectProgram, quadCamera);
+	// выводим полноэкранный прямоугольник
+	ShaderProgramBind(posteffectProgram);
+
+	TextureSetup(posteffectProgram, 0, "colorTexture", posteffectTexture);
+	TextureSetup(posteffectProgram, 2, "depthTexture", posteffectDepthTexture);
+
+	ScreenQuadRender(quad);
 
 	// проверка на ошибки
 	OPENGL_CHECK_FOR_ERRORS();
@@ -294,7 +343,7 @@ void GLWindowUpdate(const GLWindow &window, double deltaTime)
 	if ((torusRotation[2] += 7.0f * (float)deltaTime) > 360.0f)
 		torusRotation[2] -= 360.0f;
 
-	// зададим матрицу вращения куба
+	// зададим матрицу вращения торов
 	meshes[1].rotation = GLFromEuler(torusRotation[0], torusRotation[1], torusRotation[2]);
 	meshes[2].rotation = GLFromEuler(-torusRotation[0], torusRotation[1], -torusRotation[2]);
 
