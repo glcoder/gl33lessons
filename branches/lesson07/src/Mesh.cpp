@@ -31,15 +31,15 @@ void MeshCreate(Mesh &mesh, const vec3 &position, const vertex *vertices, uint32
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, icount * sizeof(uint32_t), indices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(VERT_POSITION, 3, GL_FLOAT, GL_FALSE,
-		sizeof(vertex), (const GLvoid*)0);
+		sizeof(vertex), GL_OFFSET(0));
 	glEnableVertexAttribArray(VERT_POSITION);
 
 	glVertexAttribPointer(VERT_TEXCOORD, 2, GL_FLOAT, GL_FALSE,
-		sizeof(vertex), (const GLvoid*)(sizeof(float3)));
+		sizeof(vertex), GL_OFFSET(sizeof(float3)));
 	glEnableVertexAttribArray(VERT_TEXCOORD);
 
 	glVertexAttribPointer(VERT_NORMAL, 3, GL_FLOAT, GL_FALSE,
-		sizeof(vertex), (const GLvoid*)(sizeof(float3) + sizeof(float2)));
+		sizeof(vertex), GL_OFFSET(sizeof(float3) + sizeof(float2)));
 	glEnableVertexAttribArray(VERT_NORMAL);
 
 	OPENGL_CHECK_FOR_ERRORS();
