@@ -1,6 +1,11 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <windows.h>
+#endif
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
@@ -8,15 +13,6 @@
 #include <cassert>
 #include <cmath>
 #include <ctime>
-
-#define VERT_POSITION  0
-#define VERT_TEXCOORD  1
-#define VERT_NORMAL    2
-
-#define FRAG_OUTPUT0   0
-
-#define TEXTURE_COLOR  0
-#define TEXTURE_DEPTH  1
 
 typedef float float2[2];
 typedef float float3[3];
@@ -30,19 +26,11 @@ typedef unsigned __int16 uint16_t;
 typedef __int32          int32_t;
 typedef unsigned __int32 uint32_t;
 
-// кажется MSVC не знает про snprintf, но там есть _snprintf
 #define snprintf _snprintf
-
-#elif defined(__MINGW32__)
-#include <stdint.h>
-
 #else
-#error You must compile this code with MSVC or MinGW!
+#include <stdint.h>
 #endif
 
-#include "Logger.h"
-
-// загрузка файла целиком в память
-bool LoadFile(const char *fileName, bool binary, uint8_t **buffer, uint32_t *size);
+#include "Log.h"
 
 #endif /* COMMON_H */

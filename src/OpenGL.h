@@ -1,87 +1,36 @@
 #ifndef OPENGL_H
 #define OPENGL_H
 
-#define WIN32_LEAN_AND_MEAN 1
-#include <windows.h>
+#include "common.h"
 
 #include <GL/gl.h>
 #include "GL/glext.h"
+
+#ifdef _WIN32
 #include "GL/wglext.h"
+#endif
 
-#include "common.h"
+#define GL_GET_PROC(p, n) \
+	n = (p)GL::getProc(#n)
 
-// глобальная перменная для хранения ошибки OpenGL
-extern GLenum g_OpenGLError;
-
-// получть адрес функции из драйвера
-#define OPENGL_GET_PROC(p,n) \
-	n = (p)wglGetProcAddress(#n); \
+#define GL_GET_PROC_CRITICAL(p, n) \
+	n = (p)GL::getProc(#n); \
 	if (NULL == n) \
-	{ \
-		LOG_ERROR("Loading extension '%s' fail (%d)\n", #n, GetLastError()); \
-		return false; \
-	}
+		return false
 
-// проверка на ошибки OpenGL
-#define OPENGL_CHECK_FOR_ERRORS() \
-	if ((g_OpenGLError = glGetError()) != GL_NO_ERROR) \
-		LOG_ERROR("OpenGL error 0x%X\n", (unsigned)g_OpenGLError);
+#define GL_CHECK_FOR_ERRORS() \
+	if (GL::getError() != GL_NO_ERROR) \
+		LOG_ERROR("OpenGL error 0x%X\n", (unsigned)GL::error);
 
-// инициализация необходимых расширений OpenGL
-bool OpenGLInitExtensions();
+struct GL
+{
+	static GLenum error;
 
-// вывод в лог различной информации по OpenGL, версия, константы и т.п.
-void OpenGLPrintDebugInfo();
+	static void*  getProc(const char *name);
+	static GLenum getError();
 
-// расширения OpenGL
-// Texture
-extern PFNGLACTIVETEXTUREPROC glActiveTexture;
-// VAO
-extern PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays;
-extern PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
-extern PFNGLBINDVERTEXARRAYPROC    glBindVertexArray;
-// VBO
-extern PFNGLGENBUFFERSPROC    glGenBuffers;
-extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
-extern PFNGLBINDBUFFERPROC    glBindBuffer;
-extern PFNGLBUFFERDATAPROC    glBufferData;
-extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
-extern PFNGLMAPBUFFERPROC     glMapBuffer;
-extern PFNGLUNMAPBUFFERPROC   glUnmapBuffer;
-// Shaders
-extern PFNGLCREATEPROGRAMPROC     glCreateProgram;
-extern PFNGLDELETEPROGRAMPROC     glDeleteProgram;
-extern PFNGLLINKPROGRAMPROC       glLinkProgram;
-extern PFNGLVALIDATEPROGRAMPROC   glValidateProgram;
-extern PFNGLUSEPROGRAMPROC        glUseProgram;
-extern PFNGLGETPROGRAMIVPROC      glGetProgramiv;
-extern PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
-extern PFNGLCREATESHADERPROC      glCreateShader;
-extern PFNGLDELETESHADERPROC      glDeleteShader;
-extern PFNGLSHADERSOURCEPROC      glShaderSource;
-extern PFNGLCOMPILESHADERPROC     glCompileShader;
-extern PFNGLATTACHSHADERPROC      glAttachShader;
-extern PFNGLDETACHSHADERPROC      glDetachShader;
-extern PFNGLGETSHADERIVPROC       glGetShaderiv;
-extern PFNGLGETSHADERINFOLOGPROC  glGetShaderInfoLog;
-// Attributes
-extern PFNGLGETATTRIBLOCATIONPROC        glGetAttribLocation;
-extern PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer;
-extern PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray;
-extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
-// Uniforms
-extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
-extern PFNGLUNIFORMMATRIX3FVPROC   glUniformMatrix3fv;
-extern PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv;
-extern PFNGLUNIFORM1IPROC          glUniform1i;
-extern PFNGLUNIFORM1FVPROC         glUniform1fv;
-extern PFNGLUNIFORM3FVPROC         glUniform3fv;
-extern PFNGLUNIFORM4FVPROC         glUniform4fv;
-// FBO
-extern PFNGLBINDFRAMEBUFFERPROC        glBindFramebuffer;
-extern PFNGLDELETEFRAMEBUFFERSPROC     glDeleteFramebuffers;
-extern PFNGLGENFRAMEBUFFERSPROC        glGenFramebuffers;
-extern PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
-extern PFNGLFRAMEBUFFERTEXTUREPROC     glFramebufferTexture;
+	static bool initialize();
+	static void information();
+};
 
 #endif /* OPENGL_H */
