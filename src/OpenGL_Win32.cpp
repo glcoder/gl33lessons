@@ -1,11 +1,12 @@
 #include "OpenGL.h"
 
-void* GL::getProc(const char *name)
+void* GL::getProcAddress(const char *name)
 {
-	void *entrypt = (void *)wglGetProcAddress(name);
+	void *proc = (void *)wglGetProcAddress(name);
 
-	if (NULL == entrypt)
-		LOG_ERROR("Loading extension '%s' fail (%d)\n", name, GetLastError());
+	if (NULL == proc)
+		LOG_ERROR("wglGetProcAddress('%s') fail (%d)\n", name, GetLastError());
 
-	return entrypt;
+	return proc;
 }
+

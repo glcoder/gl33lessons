@@ -33,3 +33,4 @@ void Log::write(const char *format, ...)
 
 	fclose(output);
 }
+

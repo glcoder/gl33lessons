@@ -355,3 +355,4 @@ LRESULT CALLBACK MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 	return window ? (LRESULT)window->messageHandler(data) : DefWindowProc(hWnd, msg, wParam, lParam);
 }
+

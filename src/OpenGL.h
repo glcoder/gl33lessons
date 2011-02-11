@@ -10,11 +10,19 @@
 #include "GL/wglext.h"
 #endif
 
+#define VERT_POSITION  0
+#define VERT_TEXCOORD  1
+#define VERT_NORMAL    2
+
+#define FRAG_OUTPUT0   0
+
+#define GL_OFFSET(x) ((const GLvoid *)(x))
+
 #define GL_GET_PROC(p, n) \
-	n = (p)GL::getProc(#n)
+	n = (p)GL::getProcAddress(#n)
 
 #define GL_GET_PROC_CRITICAL(p, n) \
-	n = (p)GL::getProc(#n); \
+	n = (p)GL::getProcAddress(#n); \
 	if (NULL == n) \
 		return false
 
@@ -22,15 +30,16 @@
 	if (GL::getError() != GL_NO_ERROR) \
 		LOG_ERROR("OpenGL error 0x%X\n", (unsigned)GL::error);
 
-struct GL
+namespace GL
 {
-	static GLenum error;
+	GLenum error;
 
-	static void*  getProc(const char *name);
-	static GLenum getError();
+	void*  getProcAddress(const char *name);
+	GLenum getError();
 
-	static bool initialize();
-	static void information();
+	bool initialize();
+	void information();
 };
 
 #endif /* OPENGL_H */
+
