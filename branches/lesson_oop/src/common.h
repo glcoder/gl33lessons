@@ -14,6 +14,8 @@
 #include <cmath>
 #include <ctime>
 
+#define ARRAYSIZE(a) (sizeof(a)/sizeof(*(a)))
+
 typedef float float2[2];
 typedef float float3[3];
 typedef float float4[4];
@@ -34,3 +36,4 @@ typedef unsigned __int32 uint32_t;
 #include "Log.h"
 
 #endif /* COMMON_H */
+

@@ -15,11 +15,12 @@
 
 #define ASSERT(x)          assert(x)
 
-struct Log
+namespace Log
 {
-	static void create(const char *filename);
-	static void destroy();
-	static void write(const char *format, ...);
+	void create(const char *filename);
+	void destroy();
+	void write(const char *format, ...);
 };
 
 #endif /* LOG_H */
+
