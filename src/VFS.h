@@ -9,7 +9,6 @@ namespace VFS
 {
 	bool load(const char *name, VFSDataType type,
 		uint8_t **buffer, uint32_t *size);
-};
+}
 
 #endif /* VFS_H */
-

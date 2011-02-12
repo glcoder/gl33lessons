@@ -9,4 +9,3 @@ void* GL::getProcAddress(const char *name)
 
 	return proc;
 }
-

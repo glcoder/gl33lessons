@@ -2,8 +2,8 @@
 #define SHADER_H
 
 #include "common.h"
-#include "OpenGL.h"
 #include "VFS.h"
+#include "OpenGL.h"
 
 class Shader
 {
@@ -14,7 +14,7 @@ public:
 	void create(GLenum type);
 	void destroy();
 
-	bool create(GLenum type, const char *name);
+	bool load(GLenum type, const char *name);
 
 	void source(const GLchar *data, GLint length) const;
 	bool compile() const;
@@ -55,4 +55,3 @@ protected:
 };
 
 #endif /* SHADER_H */
-
