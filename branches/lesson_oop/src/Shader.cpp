@@ -15,7 +15,6 @@ static const GLchar fragmentShaderDefines[] =
 	DEFINE_TO_STR(FRAG_OUTPUT0)
 	"\n";
 
-
 Shader::Shader():
 	m_handle(0), m_type(0)
 {
@@ -42,26 +41,22 @@ void Shader::destroy()
 	m_handle = 0;
 }
 
-bool Shader::create(GLenum type, const char *name)
+bool Shader::load(GLenum type, const char *name)
 {
 	ASSERT(name);
 
 	uint8_t  *buffer;
 	uint32_t size;
 
-	create(type);
-
 	if (!VFS::load(name, VFS_BINARY, &buffer, &size))
-	{
-		destroy();
 		return false;
-	}
 
+	create(type);
 	source((const GLchar *)buffer, (GLint)size);
 
 	delete[] buffer;
 
-	return true;
+	return compile();
 }
 
 void Shader::source(const GLchar *data, GLint length) const
@@ -69,7 +64,7 @@ void Shader::source(const GLchar *data, GLint length) const
 	ASSERT(data);
 
 	const GLchar *shaderSource[2] = {NULL, data};
-	const GLint  shaderLength[2]  = {0, length};
+	GLint        shaderLength[2]  = {0, length};
 
 	if (m_type == GL_VERTEX_SHADER)
 	{
@@ -127,14 +122,14 @@ ShaderProgram::~ShaderProgram()
 	destroy();
 }
 
-void create()
+void ShaderProgram::create()
 {
 	ASSERT(m_handle == 0);
 
 	m_handle = glCreateProgram();
 }
 
-void destroy()
+void ShaderProgram::destroy()
 {
 	if (glIsProgram(m_handle) == GL_TRUE)
 	{
@@ -189,4 +184,3 @@ GLint ShaderProgram::getStatus(GLenum param) const
 
 	return status;
 }
-

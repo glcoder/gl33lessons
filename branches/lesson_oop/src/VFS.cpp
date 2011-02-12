@@ -5,7 +5,7 @@ bool VFS::load(const char *name, VFSDataType type,
 {
 	ASSERT(name);
 	ASSERT(buffer);
-	ASSERT(length);
+	ASSERT(size);
 
 	FILE       *input = NULL;
 	const char mode[] = {'r', type == VFS_BINARY ? 'b' : 't', '\0'};
@@ -17,22 +17,21 @@ bool VFS::load(const char *name, VFSDataType type,
 	}
 
 	fseek(input, 0, SEEK_END);
-	*length = (uint32_t)ftell(input);
+	*size = (uint32_t)ftell(input);
 	rewind(input);
 
-	if (*length == 0)
+	if (*size == 0)
 	{
 		LOG_ERROR("Empty file '%s'\n", name);
 		fclose(input);
 		return false;
 	}
 
-	*buffer = new uint8_t[*length];
+	*buffer = new uint8_t[*size];
 	ASSERT(*buffer);
 
-	fread(*buffer, 1, *length, input);
+	fread(*buffer, 1, *size, input);
 	fclose(input);
 
 	return true;
 }
-

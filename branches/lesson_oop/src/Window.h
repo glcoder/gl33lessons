@@ -20,7 +20,9 @@ public:
 		m_active = false;
 	}
 
-	bool create(const char *title, int32_t width, int32_t height, bool fullscreen = false);
+	bool create(const char *title, int32_t width, int32_t height,
+		bool fullscreen = false);
+
 	void destroy();
 
 	void setSize(int32_t width, int32_t height, bool fullscreen = false);
@@ -48,4 +50,3 @@ protected:
 };
 
 #endif /* WINDOW_H */
-

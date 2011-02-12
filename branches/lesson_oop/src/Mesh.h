@@ -1,21 +1,10 @@
-#define MESH_H
+#ifndef MESH_H
 #define MESH_H
 
 #include "common.h"
+#include "VFS.h"
 #include "OpenGL.h"
-
-struct VertexPT
-{
-	float3 position;
-	float2 texcoord;
-};
-
-struct VertexPTN
-{
-	float3 position;
-	float2 texcoord;
-	float3 normal;
-};
+#include "modcon/types.h"
 
 class Mesh
 {
@@ -23,10 +12,10 @@ public:
 	Mesh();
 	~Mesh();
 
-	bool create(const char *name);
 	void createFullscreenQuad();
-
 	void destroy();
+
+	bool load(const char *name);
 
 	void render() const;
 
@@ -36,4 +25,3 @@ protected:
 };
 
 #endif /* MESH_H */
-

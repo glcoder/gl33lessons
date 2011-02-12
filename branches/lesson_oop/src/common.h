@@ -35,5 +35,46 @@ typedef unsigned __int32 uint32_t;
 
 #include "Log.h"
 
-#endif /* COMMON_H */
+inline void float2_set(float2 var, float x, float y)
+{
+	var[0] = x;
+	var[1] = y;
+}
 
+inline void float3_set(float3 var, float x, float y, float z)
+{
+	var[0] = x;
+	var[1] = y;
+	var[2] = z;
+}
+
+inline void float4_set(float3 var, float x, float y, float z, float w)
+{
+	var[0] = x;
+	var[1] = y;
+	var[2] = z;
+	var[3] = w;
+}
+
+inline void float2_copy(float2 dst, float2 src)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+}
+
+inline void float3_copy(float3 dst, float3 src)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+}
+
+inline void float4_copy(float4 dst, float4 src)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+	dst[3] = src[3];
+}
+
+#endif /* COMMON_H */

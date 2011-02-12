@@ -15,9 +15,11 @@ static HWND      g_hWnd      = NULL;
 static HDC       g_hDC       = NULL;
 static HGLRC     g_hRC       = NULL;
 
-static LRESULT CALLBACK MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK MessageHandler(HWND hWnd, UINT msg,
+	WPARAM wParam, LPARAM lParam);
 
-bool Window::create(const char *title, int32_t width, int32_t height, bool fullscreen)
+bool Window::create(const char *title, int32_t width, int32_t height,
+	bool fullscreen)
 {
 	ASSERT(title);
 	ASSERT(width > 0);
@@ -71,8 +73,9 @@ bool Window::create(const char *title, int32_t width, int32_t height, bool fulls
 
 	AdjustWindowRectEx (&rect, style, FALSE, exStyle);
 
-	g_hWnd = CreateWindowEx(exStyle, g_className, title, style, rect.left, rect.top,
-		rect.right - rect.left, rect.bottom - rect.top, NULL, NULL, g_hInstance, (LPVOID)this);
+	g_hWnd = CreateWindowEx(exStyle, g_className, title, style,
+		rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+		NULL, NULL, g_hInstance, (LPVOID)this);
 
 	if (!g_hWnd)
 	{
@@ -110,7 +113,8 @@ bool Window::create(const char *title, int32_t width, int32_t height, bool fulls
 		return false;
 	}
 
-	GL_GET_PROC_CRITICAL(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
+	GL_GET_PROC_CRITICAL(PFNWGLCREATECONTEXTATTRIBSARBPROC,
+		wglCreateContextAttribsARB);
 
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hRCTemp);
@@ -198,7 +202,9 @@ void Window::setSize(int32_t width, int32_t height, bool fullscreen)
 		result = ChangeDisplaySettings(&devMode, CDS_FULLSCREEN);
 		if (result != DISP_CHANGE_SUCCESSFUL)
 		{
-			LOG_ERROR("ChangeDisplaySettings fail %dx%d (%d)\n", width, height, result);
+			LOG_ERROR("ChangeDisplaySettings fail %dx%d (%d)\n",
+				width, height, result);
+
 			m_fullscreen = false;
 		}
 	}
@@ -342,7 +348,8 @@ template <> int Window::messageHandler(const MsgData &data)
 	return DefWindowProc(g_hWnd, data.msg, data.wParam, data.lParam);
 }
 
-LRESULT CALLBACK MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK MessageHandler(HWND hWnd, UINT msg,
+	WPARAM wParam, LPARAM lParam)
 {
 	static Window *window = NULL;
 	MsgData       data    = {msg, wParam, lParam};
@@ -353,6 +360,6 @@ LRESULT CALLBACK MessageHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 		window = (Window *)cs->lpCreateParams;
 	}
 
-	return window ? (LRESULT)window->messageHandler(data) : DefWindowProc(hWnd, msg, wParam, lParam);
+	return window ? (LRESULT)window->messageHandler(data)
+		: DefWindowProc(hWnd, msg, wParam, lParam);
 }
-
