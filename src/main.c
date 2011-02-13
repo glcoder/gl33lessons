@@ -6,44 +6,48 @@
 #include <assert.h>
 
 #include "crc32.h"
+#include "modcon.h"
 
-typedef uint32_t index_t;
-typedef float    float2[2];
-typedef float    float3[3];
-typedef float    float4[4];
+typedef mesh_index_t  index_t;
+typedef mesh_vertex_t vertex_t;
 
 static const index_t INVALID_INDEX = (~((index_t)0));
 
-struct face
+typedef float float2[2];
+typedef float float3[3];
+
+#define sizeof_float2 (sizeof(float2))
+#define sizeof_float3 (sizeof(float3))
+
+typedef struct _face_t face_t;
+typedef struct _node_t node_t;
+typedef struct _list_t list_t;
+
+struct _face_t
 {
-	index_t  ip[3];
-	index_t  it[3];
-	index_t  in[3];
-	uint32_t subset;
+	index_t ip[4];
+	index_t it[4];
+	index_t in[4];
+	index_t subset;
+
+	uint32_t dim;
 };
 
-struct node
+struct _node_t
 {
-	struct node *prev, *next;
-	uint32_t    hash;
-	index_t     index;
+	struct _node_t *prev, *next;
+	uint32_t hash;
+	index_t  index;
 };
 
-struct list
+struct _list_t
 {
-	struct node *head, *tail;
-	uint32_t    count;
+	node_t   *head, *tail;
+	uint32_t count;
 };
 
-struct vertex
-{
-	float3 position;
-	float2 texcoord;
-	float3 normal;
-};
-
-static struct vertex *vertices;
-static uint32_t      vertices_count;
+static vertex_t *vertices;
+static uint32_t vertices_count;
 
 static index_t  *indices;
 static uint32_t indices_count;
@@ -57,29 +61,31 @@ static uint32_t texcoords_count;
 static float3   *normals;
 static uint32_t normals_count;
 
-static struct face *faces;
-static uint32_t    faces_count;
+static face_t   *faces;
+static uint32_t faces_count;
 
-static struct list vertices_list;
+static list_t vertices_list;
 
-uint32_t vertex_hash(struct face *face, uint32_t i);
+static mesh_head_t mesh_head;
 
-void list_create(struct list *list);
-void list_destroy(struct list *list);
-index_t list_add(struct list *list, uint32_t hash);
-index_t list_index(struct list *list, uint32_t hash);
+uint32_t vertex_hash(face_t *face, uint32_t i);
+
+void list_create(list_t *list);
+void list_destroy(list_t *list);
+index_t list_add(list_t *list, uint32_t hash);
+index_t list_index(list_t *list, uint32_t hash);
 
 void convert(const char *input_name, const char *output_name)
 {
 	assert(input_name);
 	assert(output_name);
 
-	struct face *face;
-	FILE        *input, *output;
-	char        line_read[0x200], *line;
-	size_t      length;
-	uint32_t    i, j, pi, ni, ti, fi, si;
-	index_t     index;
+	face_t   *face, fakeface;
+	FILE     *input, *output;
+	char     line_read[0x200], *line;
+	size_t   length;
+	index_t  index, i, j, pi, ni, ti, fi, si;
+	int      face_indices;
 
 	vertices_count = indices_count = positions_count =
 		normals_count = texcoords_count = faces_count = 0;
@@ -92,11 +98,13 @@ void convert(const char *input_name, const char *output_name)
 		return;
 	}
 
-	if ((output = fopen(output_name, "wt")) == NULL)
+	if ((output = fopen(output_name, "wb")) == NULL)
 	{
 		perror("Error opening output file");
 		return;
 	}
+
+	indices_count = 0;
 
 	while (!feof(input))
 	{
@@ -118,22 +126,26 @@ void convert(const char *input_name, const char *output_name)
 				++normals_count;
 		} else if (line[0] == 'f' && line[1] == ' ')
 		{
+			face_indices = sscanf(line, "%*s %u/%u/%u %u/%u/%u %u/%u/%u %u/%u/%u",
+				fakeface.ip,     fakeface.it,     fakeface.in,
+				fakeface.ip + 1, fakeface.it + 1, fakeface.in + 1,
+				fakeface.ip + 2, fakeface.it + 2, fakeface.in + 2,
+				fakeface.ip + 3, fakeface.it + 3, fakeface.in + 3);
+			indices_count += face_indices - 6; // face_indices = {9,12}
 			++faces_count;
 		}
 	}
 
-	indices_count = faces_count * 3;
-
-	positions = malloc(sizeof(float3) * positions_count);
+	positions = malloc(sizeof_float3 * positions_count);
 	assert(positions);
 
-	texcoords = malloc(sizeof(float2) * texcoords_count);
+	texcoords = malloc(sizeof_float2 * texcoords_count);
 	assert(texcoords);
 
-	normals = malloc(sizeof(float3) * normals_count);
+	normals = malloc(sizeof_float3 * normals_count);
 	assert(normals);
 
-	faces = malloc(sizeof(struct face) * faces_count);
+	faces = malloc(sizeof(face_t) * faces_count);
 	assert(faces);
 
 	indices = malloc(sizeof(index_t) * indices_count);
@@ -141,7 +153,7 @@ void convert(const char *input_name, const char *output_name)
 
 	rewind(input);
 
-	i = pi = ni = ti = fi = si = 0;
+	i = pi = ni = ti = fi = si = index = 0;
 
 	while (!feof(input))
 	{
@@ -170,17 +182,25 @@ void convert(const char *input_name, const char *output_name)
 			}
 		} else if (line[0] == 'f' && line[1] == ' ')
 		{
-			sscanf(line, "%*s %u/%u/%u %u/%u/%u %u/%u/%u",
+			face_indices = sscanf(line, "%*s %u/%u/%u %u/%u/%u %u/%u/%u %u/%u/%u",
 				faces[fi].ip,     faces[fi].it,     faces[fi].in,
 				faces[fi].ip + 1, faces[fi].it + 1, faces[fi].in + 1,
-				faces[fi].ip + 2, faces[fi].it + 2, faces[fi].in + 2);
+				faces[fi].ip + 2, faces[fi].it + 2, faces[fi].in + 2,
+				faces[fi].ip + 3, faces[fi].it + 3, faces[fi].in + 3);
 
 			faces[fi].subset = si;
+			faces[fi].dim    = face_indices / 3; // face_indices = {9,12}
 
-			i = fi * 3;
-			indices[i + 0] = list_add(&vertices_list, vertex_hash(faces + fi, 0));
-			indices[i + 1] = list_add(&vertices_list, vertex_hash(faces + fi, 1));
-			indices[i + 2] = list_add(&vertices_list, vertex_hash(faces + fi, 2));
+			indices[index++] = list_add(&vertices_list, vertex_hash(faces + fi, 0));
+			indices[index++] = list_add(&vertices_list, vertex_hash(faces + fi, 1));
+			indices[index++] = list_add(&vertices_list, vertex_hash(faces + fi, 2));
+
+			if (faces[fi].dim == 4)
+			{
+				indices[index++] = list_add(&vertices_list, vertex_hash(faces + fi, 0));
+				indices[index++] = list_add(&vertices_list, vertex_hash(faces + fi, 2));
+				indices[index++] = list_add(&vertices_list, vertex_hash(faces + fi, 3));
+			}
 
 			++fi;
 		} else if ((line[0] == 'g' || line[0] == 'o') && line[1] == ' ')
@@ -192,7 +212,7 @@ void convert(const char *input_name, const char *output_name)
 	fclose(input);
 
 	vertices_count = vertices_list.count;
-	vertices       = malloc(sizeof(struct vertex) * vertices_count);
+	vertices       = malloc(sizeof(vertex_t) * vertices_count);
 
 	assert(vertices);
 
@@ -200,14 +220,14 @@ void convert(const char *input_name, const char *output_name)
 	{
 		face = faces + i;
 
-		for (j = 0; j < 3; ++j)
+		for (j = 0; j < face->dim; ++j)
 		{
 			index = list_index(&vertices_list, vertex_hash(face, j));
 			assert(index != INVALID_INDEX);
 
-			memcpy(vertices[index].position, positions[face->ip[j] - 1], sizeof(float3));
-			memcpy(vertices[index].texcoord, texcoords[face->it[j] - 1], sizeof(float2));
-			memcpy(vertices[index].normal,     normals[face->in[j] - 1], sizeof(float3));
+			memcpy(vertices[index].position, positions[face->ip[j] - 1], sizeof_float3);
+			memcpy(vertices[index].texcoord, texcoords[face->it[j] - 1], sizeof_float2);
+			memcpy(vertices[index].normal,     normals[face->in[j] - 1], sizeof_float3);
 		}
 	}
 
@@ -218,27 +238,12 @@ void convert(const char *input_name, const char *output_name)
 
 	list_destroy(&vertices_list);
 
-	fprintf(output, "const uint32_t vcount = %u;\nconst uint32_t icount = %u;\n\n",
-		vertices_count, indices_count);
+	mesh_head.vcount = vertices_count;
+	mesh_head.icount = indices_count;
 
-	fprintf(output, "const vertex vertices[vcount] = {\n");
-
-	for (i = 0; i < vertices_count; ++i)
-	{
-		fprintf(output, "\t{{%ff * size, %ff * size, %ff * size}, {%ff, %ff}, {%ff, %ff, %ff}},\n",
-			vertices[i].position[0], vertices[i].position[1], vertices[i].position[2],
-			vertices[i].texcoord[0], vertices[i].texcoord[1],
-			vertices[i].normal[0], vertices[i].normal[1], vertices[i].normal[2]);
-	}
-
-	fprintf(output, "};\n\nconst uint32_t indices[icount] = {\n");
-
-	for (i = 0; i < indices_count; i += 3)
-	{
-		fprintf(output, "\t%u, %u, %u,\n", indices[i], indices[i + 1], indices[i + 2]);
-	}
-
-	fprintf(output, "};\n");
+	fwrite(&mesh_head, sizeof(mesh_head), 1, output);
+	fwrite(vertices, sizeof(vertex_t), mesh_head.vcount, output);
+	fwrite(indices, sizeof(index_t), mesh_head.icount, output);
 
 	free(vertices);
 	free(indices);
@@ -248,23 +253,23 @@ void convert(const char *input_name, const char *output_name)
 int main(int argc, char *argv[])
 {
 	if (argc != 3)
-		fprintf(stderr, "Usage: %s input output\n", *argv);
+		fprintf(stderr, "Usage: %s input output\n", argv[0]);
 	else
 		convert(argv[1], argv[2]);
 
 	return 0;
 }
 
-uint32_t vertex_hash(struct face *face, uint32_t i)
+uint32_t vertex_hash(face_t *face, uint32_t i)
 {
 	assert(face);
-	assert(i < 3);
+	assert(i < 4);
 
 	uint32_t indices[4] = {face->ip[i], face->in[i], face->it[i], face->subset};
-	return crc32_hash((const uint8_t*)indices, sizeof(indices));
+	return crc32_hash((const uint8_t *)indices, sizeof(indices));
 }
 
-void list_create(struct list *list)
+void list_create(list_t *list)
 {
 	assert(list);
 
@@ -272,11 +277,11 @@ void list_create(struct list *list)
 	list->count = 0;
 }
 
-void list_destroy(struct list *list)
+void list_destroy(list_t *list)
 {
 	assert(list);
 
-	struct node *node, *node_next;
+	node_t *node, *node_next;
 
 	for (node = list->head; node != NULL; node = node_next)
 	{
@@ -285,15 +290,15 @@ void list_destroy(struct list *list)
 	}
 }
 
-index_t list_add(struct list *list, uint32_t hash)
+index_t list_add(list_t *list, uint32_t hash)
 {
 	assert(list);
 
-	struct node *node;
+	node_t *node;
 
 	if (list->head == NULL)
 	{
-		node = list->head = malloc(sizeof(struct node));
+		node = list->head = malloc(sizeof(node_t));
 		node->prev = NULL;
 	} else
 	{
@@ -301,7 +306,7 @@ index_t list_add(struct list *list, uint32_t hash)
 			if (node->hash == hash)
 				return node->index;
 
-		node = list->tail->next = malloc(sizeof(struct node));
+		node = list->tail->next = malloc(sizeof(node_t));
 		node->prev = list->tail;
 	}
 
@@ -313,11 +318,11 @@ index_t list_add(struct list *list, uint32_t hash)
 	return node->index;
 }
 
-index_t list_index(struct list *list, uint32_t hash)
+index_t list_index(list_t *list, uint32_t hash)
 {
 	assert(list);
 
-	struct node *node;
+	node_t *node;
 
 	for (node = list->head; node != NULL; node = node->next)
 		if (node->hash == hash)
