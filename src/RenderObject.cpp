@@ -42,7 +42,7 @@ void RenderObject::setRotation(const mat3 &rotation)
 
 const mat4 RenderObject::getModelMatrix() const
 {
-	return GL::Translation(m_position) * mat4(m_rotation);
+	return GL::translation(m_position) * mat4(m_rotation);
 }
 
 void RenderObject::render(const ShaderProgram &program, GLint textureUnit) const

@@ -1,10 +1,19 @@
 #include "Mesh.h"
 
+//#pragma pack(1)
 struct VertexPT
 {
 	float3 position;
 	float2 texcoord;
 };
+
+struct VertexPTN
+{
+	float3 position;
+	float2 texcoord;
+	float3 normal;
+};
+//#pragma pack()
 
 Mesh::Mesh():
 	m_vao(0), m_vbo(0), m_ibo(0), m_vcount(0), m_icount(0)
@@ -136,7 +145,7 @@ bool Mesh::load(const char *name)
 
 	glGenBuffers(1, &m_ibo);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_icount * sizeof(mesh_index_t),
 		GL_PVOID(pbuffer), GL_STATIC_DRAW);
 
