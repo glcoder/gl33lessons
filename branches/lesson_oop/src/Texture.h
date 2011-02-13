@@ -19,9 +19,10 @@ public:
 	void image2D(const GLvoid *data, GLsizei width, GLsizei height,
 		GLint internalFormat, GLenum format, GLenum type, bool genMIPs = false);
 
-	bool load2DTGA(const char *name, bool genMIPs = false);
-
 	void bind(GLint unit = 0, bool compareToRef = false) const;
+
+	bool load2DTGA(const char *name, bool genMIPs = false);
+	bool load2DPNG(const char *name, bool genMIPs = false);
 
 protected:
 	GLuint m_handle;

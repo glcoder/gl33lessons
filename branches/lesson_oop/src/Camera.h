@@ -11,29 +11,14 @@
 class Camera
 {
 public:
-	Camera() {}
-	~Camera() {}
+	Camera();
+	~Camera();
 
-	void setup(const ShaderProgram &program, const RenderObject &object) const
-	{
-		const GLuint handle = program.getHandle();
-		const mat4   model  = object.getModelMatrix();
-		const mat3   normal = transpose(mat3(inverse(model)));
+	void setPosition(const vec3 &position);
+	void setRotation(const vec3 &rotation);
+	void setProjection(const mat4 &projection);
 
-		const mat4 view = GL::FromEuler(m_rotation)
-			* GL::Translation(-m_position);
-
-		const mat4 viewProjection      = m_projection * view;
-		const mat4 modelViewProjection = viewProjection * model;
-
-		glUniformMatrix4fv(glGetUniformLocation(handle, "camera.model"),  1, GL_TRUE, model.m);
-		glUniformMatrix3fv(glGetUniformLocation(handle, "camera.normal"), 1, GL_TRUE, normal.m);
-
-		glUniformMatrix4fv(glGetUniformLocation(handle, "camera.viewProjection"), 1, GL_TRUE, viewProjection.m);
-		
-		glUniformMatrix4fv(glGetUniformLocation(handle, "camera.modelViewProjection"), 1, GL_TRUE, modelViewProjection.m);
-		glUniform3fv(glGetUniformLocation(handle, "camera.position"), 1, m_position.v);
-	}
+	void setup(const ShaderProgram &program, const RenderObject &object) const;
 
 protected:
 	vec3 m_position;

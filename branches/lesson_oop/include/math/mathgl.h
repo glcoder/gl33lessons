@@ -6,7 +6,7 @@
 namespace GL
 {
 
-inline const mat4 RotationX(float angle)
+inline const mat4 rotationX(float angle)
 {
 	const float c = cosf(angle * math_radians), s = sinf(angle * math_radians);
 
@@ -16,7 +16,7 @@ inline const mat4 RotationX(float angle)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 RotationY(float angle)
+inline const mat4 rotationY(float angle)
 {
 	const float c = cosf(angle * math_radians), s = sinf(angle * math_radians);
 
@@ -26,7 +26,7 @@ inline const mat4 RotationY(float angle)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 RotationZ(float angle)
+inline const mat4 rotationZ(float angle)
 {
 	const float c = cosf(angle * math_radians), s = sinf(angle * math_radians);
 
@@ -36,7 +36,7 @@ inline const mat4 RotationZ(float angle)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 FromEuler(float x, float y, float z)
+inline const mat4 fromEuler(float x, float y, float z)
 {
 	const float cx = cosf(x * math_radians), sx = sinf(x * math_radians),
 	            cy = cosf(y * math_radians), sy = sinf(y * math_radians),
@@ -49,12 +49,12 @@ inline const mat4 FromEuler(float x, float y, float z)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 FromEuler(const vec3 &r)
+inline const mat4 fromEuler(const vec3 &r)
 {
-	return FromEuler(r.x, r.y, r.z);
+	return fromEuler(r.x, r.y, r.z);
 }
 
-inline const vec3 ToEuler(const mat4 &M)
+inline const vec3 toEuler(const mat4 &M)
 {
 	vec3 angle;
 	float x, y, C;
@@ -86,7 +86,7 @@ inline const vec3 ToEuler(const mat4 &M)
 	return angle;
 }
 
-inline const mat4 Scale(float x, float y, float z)
+inline const mat4 scale(float x, float y, float z)
 {
 	return mat4(x, 0, 0, 0,
 	            0, y, 0, 0,
@@ -94,12 +94,12 @@ inline const mat4 Scale(float x, float y, float z)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 Scale(const vec3 &s)
+inline const mat4 scale(const vec3 &s)
 {
-	return Scale(s.x, s.y, s.z);
+	return scale(s.x, s.y, s.z);
 }
 
-inline const mat4 Translation(float x, float y, float z)
+inline const mat4 translation(float x, float y, float z)
 {
 	return mat4(1, 0, 0, x,
 	            0, 1, 0, y,
@@ -107,13 +107,13 @@ inline const mat4 Translation(float x, float y, float z)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 Translation(const vec3 &t)
+inline const mat4 translation(const vec3 &t)
 {
-	return Translation(t.x, t.y, t.z);
+	return translation(t.x, t.y, t.z);
 }
 
 // projection
-inline const mat4 Orthographic(float left, float right,
+inline const mat4 orthographic(float left, float right,
 	float bottom, float top, float zNear, float zFar)
 {
 	const float tx = - (right + left) / (right - left),
@@ -126,7 +126,7 @@ inline const mat4 Orthographic(float left, float right,
 	            0, 0, 0, 1);
 }
 
-inline const mat4 Perspective(float fov, float aspect, float zNear, float zFar)
+inline const mat4 perspective(float fov, float aspect, float zNear, float zFar)
 {
 	const float f = 1 / tanf(fov * math_radians / 2),
 	            A = (zFar + zNear) / (zNear - zFar),
@@ -138,7 +138,7 @@ inline const mat4 Perspective(float fov, float aspect, float zNear, float zFar)
 	            0, 0, -1, 0);
 }
 
-inline const mat4 Frustum(float left, float right,
+inline const mat4 frustum(float left, float right,
 	float bottom, float top, float zNear, float zFar)
 {
 	return mat4((2 * zNear) / (right - left), 0, (right + left) / (right - left), 0,
@@ -148,7 +148,7 @@ inline const mat4 Frustum(float left, float right,
 }
 
 // view mtrix
-inline const mat4 LookAt(const vec3 &position, const vec3 &center, const vec3 &up)
+inline const mat4 lookAt(const vec3 &position, const vec3 &center, const vec3 &up)
 {
 	const vec3 f = normalize(position - center);
 	const vec3 s = normalize(cross(up, f));

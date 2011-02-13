@@ -4,7 +4,7 @@
 #include "common.h"
 #include "VFS.h"
 #include "OpenGL.h"
-#include "modcon/types.h"
+#include "modcon.h"
 
 class Mesh
 {
