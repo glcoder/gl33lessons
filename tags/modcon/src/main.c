@@ -35,7 +35,7 @@ struct _face_t
 
 struct _node_t
 {
-	struct _node_t *prev, *next;
+	node_t   *prev, *next;
 	uint32_t hash;
 	index_t  index;
 };
@@ -104,8 +104,7 @@ void convert(const char *input_name, const char *output_name)
 		return;
 	}
 
-	indices_count = 0;
-
+	printf("%s analyze begin...\n", input_name);
 	while (!feof(input))
 	{
 		if (fgets(line_read, 0x200, input) == NULL)
@@ -135,6 +134,7 @@ void convert(const char *input_name, const char *output_name)
 			++faces_count;
 		}
 	}
+	printf("%s analyze end: faces %d indices %d\n", input_name, faces_count, indices_count);
 
 	positions = malloc(sizeof_float3 * positions_count);
 	assert(positions);
@@ -155,6 +155,7 @@ void convert(const char *input_name, const char *output_name)
 
 	i = pi = ni = ti = fi = si = index = 0;
 
+	printf("%s reading begin...\n", input_name);
 	while (!feof(input))
 	{
 		if (fgets(line_read, 0x200, input) == NULL)
@@ -214,8 +215,11 @@ void convert(const char *input_name, const char *output_name)
 	vertices_count = vertices_list.count;
 	vertices       = malloc(sizeof(vertex_t) * vertices_count);
 
+	printf("%s reading end: vertices %d\n", input_name, vertices_count);
+
 	assert(vertices);
 
+	printf("%s preparing begin...\n", output_name);
 	for (i = 0; i < fi; ++i)
 	{
 		face = faces + i;
@@ -230,6 +234,7 @@ void convert(const char *input_name, const char *output_name)
 			memcpy(vertices[index].normal,     normals[face->in[j] - 1], sizeof_float3);
 		}
 	}
+	printf("%s preparing end\n", output_name);
 
 	free(positions);
 	free(texcoords);
@@ -241,9 +246,11 @@ void convert(const char *input_name, const char *output_name)
 	mesh_head.vcount = vertices_count;
 	mesh_head.icount = indices_count;
 
+	printf("%s saving begin...\n", output_name);
 	fwrite(&mesh_head, sizeof(mesh_head), 1, output);
 	fwrite(vertices, sizeof(vertex_t), mesh_head.vcount, output);
 	fwrite(indices, sizeof(index_t), mesh_head.icount, output);
+	printf("%s saving end\n", output_name);
 
 	free(vertices);
 	free(indices);
