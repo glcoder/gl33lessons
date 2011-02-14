@@ -43,6 +43,7 @@ namespace GL
 
 extern PFNGLACTIVETEXTUREPROC            glActiveTexture;
 extern PFNGLGENERATEMIPMAPPROC           glGenerateMipmap;
+extern PFNGLTEXIMAGE2DMULTISAMPLEPROC    glTexImage2DMultisample;
 extern PFNGLGENVERTEXARRAYSPROC          glGenVertexArrays;
 extern PFNGLDELETEVERTEXARRAYSPROC       glDeleteVertexArrays;
 extern PFNGLISVERTEXARRAYPROC            glIsVertexArray;
@@ -83,5 +84,11 @@ extern PFNGLUNIFORM1IPROC                glUniform1i;
 extern PFNGLUNIFORM1FVPROC               glUniform1fv;
 extern PFNGLUNIFORM3FVPROC               glUniform3fv;
 extern PFNGLUNIFORM4FVPROC               glUniform4fv;
+extern PFNGLBINDFRAMEBUFFERPROC          glBindFramebuffer;
+extern PFNGLDELETEFRAMEBUFFERSPROC       glDeleteFramebuffers;
+extern PFNGLGENFRAMEBUFFERSPROC          glGenFramebuffers;
+extern PFNGLCHECKFRAMEBUFFERSTATUSPROC   glCheckFramebufferStatus;
+extern PFNGLFRAMEBUFFERTEXTUREPROC       glFramebufferTexture;
+extern PFNGLBLITFRAMEBUFFERPROC          glBlitFramebuffer;
 
 #endif /* OPENGL_H */

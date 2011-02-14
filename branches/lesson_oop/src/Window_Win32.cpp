@@ -281,7 +281,7 @@ int Window::mainLoop()
 			glFinish();
 			SwapBuffers(g_hDC);
 
-			update(0.01f);
+			update(0.01);
 		} else
 		{
 			Sleep(10);

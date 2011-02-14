@@ -1,4 +1,4 @@
-CPPFLAGS := -Wall -Wextra -O0 -g -Iinclude
+CPPFLAGS := -Wall -Wextra -O3 -Iinclude
 LDFLAGS  := -Llib -static-libgcc -static-libstdc++ -lopengl32 -lpng15 -lz -mwindows
 
 BUILD_DIR  := build

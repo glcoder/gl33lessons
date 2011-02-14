@@ -39,10 +39,10 @@ public:
 	bool isActive()     const { return m_active;     }
 	bool isFocused()    const { return m_focused;    }
 
-	virtual bool initialize()     = 0;
-	virtual void clear()          = 0;
-	virtual void render()         = 0;
-	virtual void update(float dt) = 0;
+	virtual bool initialize()      = 0;
+	virtual void clear()           = 0;
+	virtual void render()          = 0;
+	virtual void update(double dt) = 0;
 
 protected:
 	int32_t m_width, m_height;
