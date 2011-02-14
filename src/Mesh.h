@@ -15,7 +15,7 @@ public:
 	void createFullscreenQuad();
 	void destroy();
 
-	bool load(const char *name);
+	bool load(const char *name, float scale = 0.0f);
 
 	void render() const;
 

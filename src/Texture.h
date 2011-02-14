@@ -16,8 +16,13 @@ public:
 
 	void destroy();
 
+	GLuint getHandle() const;
+
 	void image2D(const GLvoid *data, GLsizei width, GLsizei height,
 		GLint internalFormat, GLenum format, GLenum type, bool genMIPs = false);
+
+	void image2DMultisample(GLsizei width, GLsizei height, GLint internalFormat,
+		GLsizei samples, GLboolean fixedSampleLocations = GL_FALSE);
 
 	void bind(GLint unit = 0, bool compareToRef = false) const;
 

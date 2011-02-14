@@ -61,6 +61,9 @@ void Texture::create(GLint minFilter, GLint magFilter,
 	glGenTextures(1, &m_handle);
 	glBindTexture(m_target, m_handle);
 
+	if (m_target == GL_TEXTURE_2D_MULTISAMPLE)
+		return;
+
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, minFilter);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, magFilter);
 
@@ -74,6 +77,11 @@ void Texture::destroy()
 	glDeleteTextures(1, &m_handle);
 	m_handle = 0;
 	m_target = 0;
+}
+
+GLuint Texture::getHandle() const
+{
+	return m_handle;
 }
 
 void Texture::image2D(const GLvoid *data, GLsizei width, GLsizei height,
@@ -90,10 +98,24 @@ void Texture::image2D(const GLvoid *data, GLsizei width, GLsizei height,
 		glGenerateMipmap(m_target);
 }
 
+void Texture::image2DMultisample(GLsizei width, GLsizei height,
+	GLint internalFormat, GLsizei samples, GLboolean fixedSampleLocations)
+{
+	ASSERT(m_handle);
+
+	glBindTexture(m_target, m_handle);
+
+	glTexImage2DMultisample(m_target, samples, internalFormat,
+		width, height, fixedSampleLocations);
+}
+
 void Texture::bind(GLint unit, bool compareToRef) const
 {
 	glActiveTexture(GL_TEXTURE0 + unit);
 	glBindTexture(m_target, m_handle);
+
+	if (m_target == GL_TEXTURE_2D_MULTISAMPLE)
+		return;
 
 	glTexParameteri(m_target, GL_TEXTURE_COMPARE_MODE,
 		compareToRef ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);

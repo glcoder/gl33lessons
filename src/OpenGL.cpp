@@ -1,5 +1,10 @@
 #include "OpenGL.h"
 
+#define GL_INT_PRINT_DEBUG(name) \
+	GLint info_ ## name; \
+	glGetIntegerv(name, &info_ ## name); \
+	LOG_DEBUG(#name " = %d\n", info_ ## name)
+
 GLenum GL::error = GL_NO_ERROR;
 
 GLenum GL::getError()
@@ -27,6 +32,10 @@ void GL::information()
 		major, minor
 	);
 
+	GL_INT_PRINT_DEBUG(GL_MAX_SAMPLES);
+	//GL_INT_PRINT_DEBUG(GL_MAX_COLOR_TEXTURE_SAMPLES);
+	//GL_INT_PRINT_DEBUG(GL_MAX_DEPTH_TEXTURE_SAMPLES);
+
 	GL_CHECK_FOR_ERRORS();
 }
 
@@ -34,6 +43,7 @@ bool GL::initialize()
 {
 	GL_GET_PROC_CRITICAL(PFNGLACTIVETEXTUREPROC,            glActiveTexture);
 	GL_GET_PROC_CRITICAL(PFNGLGENERATEMIPMAPPROC,           glGenerateMipmap);
+	GL_GET_PROC_CRITICAL(PFNGLTEXIMAGE2DMULTISAMPLEPROC,    glTexImage2DMultisample);
 	GL_GET_PROC_CRITICAL(PFNGLGENVERTEXARRAYSPROC,          glGenVertexArrays);
 	GL_GET_PROC_CRITICAL(PFNGLDELETEVERTEXARRAYSPROC,       glDeleteVertexArrays);
 	GL_GET_PROC_CRITICAL(PFNGLISVERTEXARRAYPROC,            glIsVertexArray);
@@ -74,12 +84,19 @@ bool GL::initialize()
 	GL_GET_PROC_CRITICAL(PFNGLUNIFORM1FVPROC,               glUniform1fv);
 	GL_GET_PROC_CRITICAL(PFNGLUNIFORM3FVPROC,               glUniform3fv);
 	GL_GET_PROC_CRITICAL(PFNGLUNIFORM4FVPROC,               glUniform4fv);
+	GL_GET_PROC_CRITICAL(PFNGLBINDFRAMEBUFFERPROC,          glBindFramebuffer);
+	GL_GET_PROC_CRITICAL(PFNGLDELETEFRAMEBUFFERSPROC,       glDeleteFramebuffers);
+	GL_GET_PROC_CRITICAL(PFNGLGENFRAMEBUFFERSPROC,          glGenFramebuffers);
+	GL_GET_PROC_CRITICAL(PFNGLCHECKFRAMEBUFFERSTATUSPROC,   glCheckFramebufferStatus);
+	GL_GET_PROC_CRITICAL(PFNGLFRAMEBUFFERTEXTUREPROC,       glFramebufferTexture);
+	GL_GET_PROC_CRITICAL(PFNGLBLITFRAMEBUFFERPROC,          glBlitFramebuffer);
 
 	return true;
 }
 
 PFNGLACTIVETEXTUREPROC            glActiveTexture = NULL;
 PFNGLGENERATEMIPMAPPROC           glGenerateMipmap = NULL;
+PFNGLTEXIMAGE2DMULTISAMPLEPROC    glTexImage2DMultisample = NULL;
 PFNGLGENVERTEXARRAYSPROC          glGenVertexArrays = NULL;
 PFNGLDELETEVERTEXARRAYSPROC       glDeleteVertexArrays = NULL;
 PFNGLISVERTEXARRAYPROC            glIsVertexArray = NULL;
@@ -120,3 +137,9 @@ PFNGLUNIFORM1IPROC                glUniform1i = NULL;
 PFNGLUNIFORM1FVPROC               glUniform1fv = NULL;
 PFNGLUNIFORM3FVPROC               glUniform3fv = NULL;
 PFNGLUNIFORM4FVPROC               glUniform4fv = NULL;
+PFNGLBINDFRAMEBUFFERPROC          glBindFramebuffer = NULL;
+PFNGLDELETEFRAMEBUFFERSPROC       glDeleteFramebuffers = NULL;
+PFNGLGENFRAMEBUFFERSPROC          glGenFramebuffers = NULL;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC   glCheckFramebufferStatus = NULL;
+PFNGLFRAMEBUFFERTEXTUREPROC       glFramebufferTexture = NULL;
+PFNGLBLITFRAMEBUFFERPROC          glBlitFramebuffer = NULL;

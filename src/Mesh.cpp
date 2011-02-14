@@ -81,7 +81,7 @@ void Mesh::render() const
 		glDrawArrays(GL_TRIANGLES, 0, m_vcount);
 }
 
-bool Mesh::load(const char *name)
+bool Mesh::load(const char *name, float scale)
 {
 	ASSERT(name);
 	ASSERT(m_vao == 0);
@@ -114,6 +114,18 @@ bool Mesh::load(const char *name)
 	m_icount = head->icount;
 
 	pbuffer = buffer + sizeof(mesh_head_t);
+
+	if (scale != 0.0f)
+	{
+		mesh_vertex_t *vertices = (mesh_vertex_t *)pbuffer;
+
+		for (uint32_t i = 0; i < m_vcount; ++i)
+		{
+			vertices[i].position[0] *= scale;
+			vertices[i].position[1] *= scale;
+			vertices[i].position[2] *= scale;
+		}
+	}
 
 	glGenVertexArrays(1, &m_vao);
 	glBindVertexArray(m_vao);
