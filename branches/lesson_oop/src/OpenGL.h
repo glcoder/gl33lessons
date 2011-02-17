@@ -13,6 +13,8 @@
 #define VERT_POSITION  0
 #define VERT_TEXCOORD  1
 #define VERT_NORMAL    2
+#define VERT_TANGENT   3
+#define VERT_BINORMAL  4
 
 #define FRAG_OUTPUT0   0
 

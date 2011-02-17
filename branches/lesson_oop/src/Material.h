@@ -15,16 +15,20 @@ public:
 	void setTexture(const Texture *texture);
 	const Texture *getTexure() const;
 
+	void setTextureNormal(const Texture *texture);
+	const Texture *getTexureNormal() const;
+
 	void setAmbient(float x, float y, float z, float w);
 	void setDiffuse(float x, float y, float z, float w);
 	void setSpecular(float x, float y, float z, float w);
 	void setEmission(float x, float y, float z, float w);
 	void setShininess(float x);
 
-	void setup(const ShaderProgram &program, GLint textureUnit = 0) const;
+	void setup(const ShaderProgram &program, GLint textureUnit = 0,
+		GLint textureNormalUnit = 1) const;
 
 protected:
-	const Texture *m_texture;
+	const Texture *m_texture, *m_textureNormal;
 	float4 m_ambient;
 	float4 m_diffuse;
 	float4 m_specular;

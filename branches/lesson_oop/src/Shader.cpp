@@ -4,14 +4,16 @@
 #define DEFINE_TO_STR(x)        "#define " #x " " DEFINE_TO_STR_HELPER(x) "\n"
 
 static const GLchar vertexShaderDefines[] =
-	"#version 330 core\n"
+	"#version 330 core\n\n"
 	DEFINE_TO_STR(VERT_POSITION)
 	DEFINE_TO_STR(VERT_TEXCOORD)
 	DEFINE_TO_STR(VERT_NORMAL)
+	DEFINE_TO_STR(VERT_TANGENT)
+	DEFINE_TO_STR(VERT_BINORMAL)
 	"\n";
 
 static const GLchar fragmentShaderDefines[] =
-	"#version 330 core\n"
+	"#version 330 core\n\n"
 	DEFINE_TO_STR(FRAG_OUTPUT0)
 	"\n";
 

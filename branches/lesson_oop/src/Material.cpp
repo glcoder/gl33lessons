@@ -1,12 +1,13 @@
 #include "Material.h"
 
 Material::Material():
-	m_texture(NULL), m_shininess(0.0f)
+	m_texture(NULL), m_textureNormal(NULL)
 {
 	float4_set(m_ambient, 0.2f, 0.2f, 0.2f, 1.0f);
 	float4_set(m_diffuse, 0.8f, 0.8f, 0.8f, 1.0f);
 	float4_set(m_specular, 0.0f, 0.0f, 0.0f, 1.0f);
 	float4_set(m_emission, 0.0f, 0.0f, 0.0f, 1.0f);
+	m_shininess = 0.0f;
 }
 
 Material::~Material()
@@ -21,6 +22,16 @@ void Material::setTexture(const Texture *texture)
 const Texture *Material::getTexure() const
 {
 	return m_texture;
+}
+
+void Material::setTextureNormal(const Texture *texture)
+{
+	m_textureNormal = texture;
+}
+
+const Texture *Material::getTexureNormal() const
+{
+	return m_textureNormal;
 }
 
 void Material::setAmbient(float x, float y, float z, float w)
@@ -48,12 +59,15 @@ void Material::setShininess(float x)
 	m_shininess = x;
 }
 
-void Material::setup(const ShaderProgram &program, GLint textureUnit) const
+void Material::setup(const ShaderProgram &program, GLint textureUnit, GLint textureNormalUnit) const
 {
 	const GLuint handle = program.getHandle();
 
 	if (m_texture)
 		m_texture->setup(program, "material.texture", textureUnit, false);
+
+	if (m_textureNormal)
+		m_textureNormal->setup(program, "material.textureNormal", textureNormalUnit, false);
 
 	glUniform4fv(glGetUniformLocation(handle, "material.ambient"), 1, m_ambient);
 	glUniform4fv(glGetUniformLocation(handle, "material.diffuse"), 1, m_diffuse);
