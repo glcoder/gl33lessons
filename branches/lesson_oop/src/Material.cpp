@@ -53,10 +53,7 @@ void Material::setup(const ShaderProgram &program, GLint textureUnit) const
 	const GLuint handle = program.getHandle();
 
 	if (m_texture)
-	{
-		m_texture->bind(textureUnit, false);
-		glUniform1i(glGetUniformLocation(handle, "material.texture"), textureUnit);
-	}
+		m_texture->setup(program, "material.texture", textureUnit, false);
 
 	glUniform4fv(glGetUniformLocation(handle, "material.ambient"), 1, m_ambient);
 	glUniform4fv(glGetUniformLocation(handle, "material.diffuse"), 1, m_diffuse);

@@ -4,6 +4,7 @@
 #include "common.h"
 #include "VFS.h"
 #include "OpenGL.h"
+#include "Shader.h"
 
 class Texture
 {
@@ -25,6 +26,9 @@ public:
 		GLsizei samples, GLboolean fixedSampleLocations = GL_FALSE);
 
 	void bind(GLint unit = 0, bool compareToRef = false) const;
+
+	void setup(const ShaderProgram &program, const char *name,
+		GLint unit = 0, bool compareToRef = false) const;
 
 	bool load2DTGA(const char *name, bool genMIPs = false);
 	bool load2DPNG(const char *name, bool genMIPs = false);
