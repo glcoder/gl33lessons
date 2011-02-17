@@ -59,7 +59,7 @@ void Camera::setup(const ShaderProgram &program, const RenderObject &object) con
 {
 	const GLuint handle = program.getHandle();
 	const mat4   model  = object.getModelMatrix();
-	const mat3   normal = transpose(mat3(inverse(model)));
+	const mat3   normal = object.getRotation(); //transpose(mat3(inverse(model)));
 
 	const mat4 view = GL::fromEuler(m_rotation)
 		* GL::translation(-m_position);

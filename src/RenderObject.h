@@ -24,9 +24,13 @@ public:
 	void setPosition(const vec3 &position);
 	void setRotation(const mat3 &rotation);
 
+	vec3 getPosition() const;
+	mat3 getRotation() const;
+
 	const mat4 getModelMatrix() const;
 
-	void render(const ShaderProgram &program, GLint textureUnit = 0) const;
+	void render(const ShaderProgram &program, GLint textureUnit = 0,
+		GLint textureNormalUnit = 1) const;
 
 protected:
 	const Material *m_material;

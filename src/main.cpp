@@ -29,7 +29,7 @@ public:
 protected:
 	bool loadShaderProgram(ShaderProgram &program, const char *vname, const char *fname);
 
-	Texture       m_objectTexture, m_depthTexture;
+	Texture       m_objectTexture, m_objectTextureNormal, m_depthTexture;
 	ShaderProgram m_quadProgram, m_depthProgram, m_shadowmapProgram;
 	Mesh          m_objectMesh, m_quadMesh;
 	RenderObject  m_object, m_quadObject;
@@ -71,13 +71,19 @@ bool Window::initialize()
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 
-	if (!m_objectMesh.load("data/models/cubes.bin", 0.05f))
+	if (!m_objectMesh.load("data/models/scene.bin", true, 0.05f))
 		return false;
 
 	m_objectTexture.create(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_REPEAT);
+	m_objectTextureNormal.create(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_REPEAT);
 
-	if (!m_objectTexture.load2DPNG("data/textures/stone.png", true)
-		|| !loadShaderProgram(m_depthProgram, "data/shaders/depth.vs", "data/shaders/depth.fs")
+	if (!m_objectTexture.load2DPNG("data/textures/stoneDiffuse.png", true)
+		|| !m_objectTextureNormal.load2DPNG("data/textures/stoneNormal.png", true))
+	{
+		return false;
+	}
+
+	if (!loadShaderProgram(m_depthProgram, "data/shaders/depth.vs", "data/shaders/depth.fs")
 		|| !loadShaderProgram(m_shadowmapProgram, "data/shaders/shadowmap.vs", "data/shaders/shadowmap.fs")
 		|| !loadShaderProgram(m_quadProgram, "data/shaders/quad.vs", "data/shaders/quad.fs"))
 	{
@@ -85,8 +91,9 @@ bool Window::initialize()
 	}
 
 	m_objectMaterial.setTexture(&m_objectTexture);
+	m_objectMaterial.setTextureNormal(&m_objectTextureNormal);
 
-	m_objectMaterial.setSpecular(0.8f, 0.8f, 0.8f, 1.0f);
+	m_objectMaterial.setSpecular(0.5f, 0.5f, 0.5f, 1.0f);
 	m_objectMaterial.setShininess(20.0f);
 
 	m_object.setMesh(&m_objectMesh);
@@ -95,11 +102,12 @@ bool Window::initialize()
 	const vec3 lightPosition(10.0f, 10.0f, 10.0f);
 	m_light.setPosition(lightPosition.x, lightPosition.y, lightPosition.z, 0.0f);
 
-	m_lightCamera.lookAt(lightPosition, vec3_zero, vec3_y);
+	m_lightCamera.lookAt(lightPosition, -lightPosition, vec3_y);
 	m_lightCamera.orthographic(-10.0f, 10.0f, -10.0f, 10.0f, -100.0f, 100.0f);
+	//m_lightCamera.perspective(45.0f, (float)m_width / m_height, 1.0f, 50.0f);
 
 	m_camera.lookAt(lightPosition, vec3_zero, vec3_y);
-	m_camera.perspective(45.0f, (float)m_width / m_height, 0.1f, 1000.0f);
+	m_camera.perspective(45.0f, (float)m_width / m_height, 0.1f, 100.0f);
 
 	m_depthTexture.create();
 	m_depthTexture.image2D(NULL, m_width * 2, m_height * 2, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT);
@@ -161,7 +169,7 @@ void Window::renderScene(const ShaderProgram &program, const Camera &camera)
 	m_light.setup(program);
 	m_lightCamera.setupLight(program);
 
-	m_depthTexture.setup(program, "depthTexture", 1, true);
+	m_depthTexture.setup(program, "depthTexture", 2, true);
 
 	camera.setup(program, m_object);
 	m_object.render(program);

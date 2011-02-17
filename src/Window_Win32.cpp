@@ -296,7 +296,15 @@ int IWindow::mainLoop()
 {
 	MSG msg;
 
+	double   fpsTime = 0.0;
+	uint32_t fps     = 0;
+
+	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
+	GL_GET_PROC_CRITICAL(PFNWGLSWAPINTERVALEXTPROC, wglSwapIntervalEXT);
+
 	m_active = initialize();
+
+	wglSwapIntervalEXT(0);
 
 	while (m_active)
 	{
@@ -321,6 +329,19 @@ int IWindow::mainLoop()
 			SwapBuffers(g_hDC);
 
 			frameTime = m_timer.getTicks() - beginFrameTime;
+
+			fpsTime += frameTime;
+			++fps;
+
+			if (fpsTime >= 1.0)
+			{
+				char buffer[100] = "";
+				sprintf(buffer, "FPS: %u", fps);
+				SetWindowText(g_hWnd, buffer);
+
+				fps     = 0;
+				fpsTime = 0.0;
+			}
 
 			input(g_cursorRel, g_wheelRel, g_buttons, g_keyStates, frameTime);
 			update(frameTime);

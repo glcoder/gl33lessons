@@ -40,18 +40,27 @@ void RenderObject::setRotation(const mat3 &rotation)
 	m_rotation = rotation;
 }
 
+vec3 RenderObject::getPosition() const
+{
+	return m_position;
+}
+
+mat3 RenderObject::getRotation() const
+{
+	return m_rotation;
+}
+
 const mat4 RenderObject::getModelMatrix() const
 {
 	return GL::translation(m_position) * mat4(m_rotation);
 }
 
-void RenderObject::render(const ShaderProgram &program, GLint textureUnit) const
+void RenderObject::render(const ShaderProgram &program, GLint textureUnit,
+	GLint textureNormalUnit) const
 {
 	ASSERT(m_material);
 	ASSERT(m_mesh);
 
-	//const GLuint handle = program.getHandle();
-
-	m_material->setup(program, textureUnit);
+	m_material->setup(program, textureUnit, textureNormalUnit);
 	m_mesh->render();
 }
