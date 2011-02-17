@@ -29,19 +29,18 @@ public:
 protected:
 	bool loadShaderProgram(ShaderProgram &program, const char *vname, const char *fname);
 
-	Texture       m_stone, m_depthTexture;
+	Texture       m_objectTexture, m_depthTexture;
 	ShaderProgram m_quadProgram, m_depthProgram, m_shadowmapProgram;
-	Mesh          m_sphere, m_quadMesh;
+	Mesh          m_objectMesh, m_quadMesh;
 	RenderObject  m_object, m_quadObject;
 	Camera        m_camera, m_lightCamera;
-	Material      m_material, m_quadMaterial;
+	Material      m_objectMaterial, m_quadMaterial;
 	Light         m_light;
 	double        m_time;
 	bool          m_renderQuad;
 
-	//Texture     m_mcolor, m_mdepth;
-	Framebuffer m_defFBO, m_depthFBO;//, m_mfbo;
-	//GLuint  m_mfbo;
+	Texture     m_msTexture, m_msDepth;
+	Framebuffer m_defFBO, m_depthFBO, m_msFBO;
 };
 
 bool Window::loadShaderProgram(ShaderProgram &program, const char *vname, const char *fname)
@@ -72,12 +71,12 @@ bool Window::initialize()
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 
-	if (!m_sphere.load("data/models/cubes.bin", 0.05f))
+	if (!m_objectMesh.load("data/models/cubes.bin", 0.05f))
 		return false;
 
-	m_stone.create(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_REPEAT);
+	m_objectTexture.create(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_REPEAT);
 
-	if (!m_stone.load2DPNG("data/textures/stone.png", true)
+	if (!m_objectTexture.load2DPNG("data/textures/stone.png", true)
 		|| !loadShaderProgram(m_depthProgram, "data/shaders/depth.vs", "data/shaders/depth.fs")
 		|| !loadShaderProgram(m_shadowmapProgram, "data/shaders/shadowmap.vs", "data/shaders/shadowmap.fs")
 		|| !loadShaderProgram(m_quadProgram, "data/shaders/quad.vs", "data/shaders/quad.fs"))
@@ -85,19 +84,22 @@ bool Window::initialize()
 		return false;
 	}
 
-	m_material.setTexture(&m_stone);
+	m_objectMaterial.setTexture(&m_objectTexture);
 
-	m_object.setMesh(&m_sphere);
-	m_object.setMaterial(&m_material);
+	m_objectMaterial.setSpecular(0.8f, 0.8f, 0.8f, 1.0f);
+	m_objectMaterial.setShininess(20.0f);
 
-	m_camera.lookAt(vec3(0.0f, 1.0f, 5.0f), vec3_zero, vec3_y);
-	m_camera.perspective(45.0f, (float)m_width / m_height, 0.1f, 1000.0f);
+	m_object.setMesh(&m_objectMesh);
+	m_object.setMaterial(&m_objectMaterial);
 
-	const vec4 lightPosition(20.0f, 20.0f, 20.0f, 0.0f);
-	m_light.setPosition(20.0f, 20.0f, 20.0f, 0.0f);
+	const vec3 lightPosition(10.0f, 10.0f, 10.0f);
+	m_light.setPosition(lightPosition.x, lightPosition.y, lightPosition.z, 0.0f);
 
-	m_lightCamera.lookAt(vec3(lightPosition), vec3_zero, vec3_y);
+	m_lightCamera.lookAt(lightPosition, vec3_zero, vec3_y);
 	m_lightCamera.orthographic(-10.0f, 10.0f, -10.0f, 10.0f, -100.0f, 100.0f);
+
+	m_camera.lookAt(lightPosition, vec3_zero, vec3_y);
+	m_camera.perspective(45.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 
 	m_depthTexture.create();
 	m_depthTexture.image2D(NULL, m_width * 2, m_height * 2, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT);
@@ -117,23 +119,21 @@ bool Window::initialize()
 	if (!m_depthFBO.complete())
 		return false;
 
-	/*
 	GLint maxSamples;
 	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
 
-	m_mcolor.create(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_TEXTURE_2D_MULTISAMPLE);
-	m_mcolor.image2DMultisample(m_width, m_height, GL_RGBA8, maxSamples, GL_TRUE);
+	m_msTexture.create(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_TEXTURE_2D_MULTISAMPLE);
+	m_msTexture.image2DMultisample(m_width, m_height, GL_RGBA8, maxSamples, GL_TRUE);
 
-	m_mdepth.create(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_TEXTURE_2D_MULTISAMPLE);
-	m_mdepth.image2DMultisample(m_width, m_height, GL_DEPTH_COMPONENT24, maxSamples, GL_TRUE);
+	m_msDepth.create(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_TEXTURE_2D_MULTISAMPLE);
+	m_msDepth.image2DMultisample(m_width, m_height, GL_DEPTH_COMPONENT24, maxSamples, GL_TRUE);
 
-	m_mfbo.create();
-	m_mfbo.attach(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_mcolor);
-	m_mfbo.attach(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_mdepth);
+	m_msFBO.create();
+	m_msFBO.attach(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_msTexture);
+	m_msFBO.attach(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_msDepth);
 
-	if (!m_mfbo.complete())
+	if (!m_msFBO.complete())
 		return false;
-	*/
 
 	m_defFBO.bind();
 
@@ -146,11 +146,12 @@ void Window::clear()
 {
 	m_defFBO.bind();
 
+	/*
 	m_depthFBO.destroy();
 	m_depthTexture.destroy();
-	m_sphere.destroy();
-	//m_program.destroy();
-	m_stone.destroy();
+	m_objectMesh.destroy();
+	m_objectTexture.destroy();
+	*/
 }
 
 void Window::renderScene(const ShaderProgram &program, const Camera &camera)
@@ -160,8 +161,7 @@ void Window::renderScene(const ShaderProgram &program, const Camera &camera)
 	m_light.setup(program);
 	m_lightCamera.setupLight(program);
 
-	m_depthTexture.bind(1, true);
-	glUniform1i(glGetUniformLocation(program.getHandle(), "depthTexture"), 1);
+	m_depthTexture.setup(program, "depthTexture", 1, true);
 
 	camera.setup(program, m_object);
 	m_object.render(program);
@@ -169,7 +169,6 @@ void Window::renderScene(const ShaderProgram &program, const Camera &camera)
 
 void Window::render()
 {
-	//glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 	m_depthFBO.bind();
 
 	glViewport(0, 0, m_width * 2, m_height * 2);
@@ -180,7 +179,7 @@ void Window::render()
 
 	renderScene(m_depthProgram, m_lightCamera);
 
-	m_defFBO.bind();
+	m_msFBO.bind();
 
 	glViewport(0, 0, m_width, m_height);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -196,23 +195,8 @@ void Window::render()
 		renderScene(m_shadowmapProgram, m_camera);
 	}
 
-	/*
-	//glBindFramebuffer(GL_FRAMEBUFFER, m_mfbo);
-	//m_mfbo.bind();
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	m_program.bind();
-
-	float time = m_time;
-	glUniform1fv(glGetUniformLocation(m_program.getHandle(), "time"), 1, &time);
-
-	m_camera.setup(m_program, m_object);
-	m_object.render(m_program);
-
-	//m_mfbo.blit(m_defFBO, 0, 0, m_width, m_height, 0, 0, m_width, m_height,
-	//	GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	*/
+	m_msFBO.blit(m_defFBO, 0, 0, m_width, m_height, 0, 0, m_width, m_height,
+		GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
 	GL_CHECK_FOR_ERRORS();
 }

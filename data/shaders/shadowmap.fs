@@ -49,18 +49,16 @@ float PCF(in vec4 smcoord)
 
 void main(void)
 {
-	vec3 normal   = normalize(vertex.normal);
-	vec3 lightDir = normalize(vertex.lightDir);
-	vec3 viewDir  = normalize(vertex.viewDir);
-
-	float shadow  = PCF(vertex.smcoord);
-
-	float NdotL = max(dot(normal, lightDir), 0.0);
+	vec3  normal   = normalize(vertex.normal);
+	vec3  lightDir = normalize(vertex.lightDir);
+	vec3  viewDir  = normalize(vertex.viewDir);
+	float shadow   = PCF(vertex.smcoord);
+	float NdotL    = max(dot(normal, lightDir), 0.0);
 	float RdotVpow = max(pow(dot(reflect(-lightDir, normal), viewDir), material.shininess), 0.0);
 
 	color = material.emission + material.ambient * light.ambient
 		+ material.diffuse * light.diffuse * NdotL
-		+ material.specular * light.specular * RdotVpow;
+		+ material.specular * light.specular * RdotVpow * shadow;
 
-	color *= texture(material.texture, vertex.texcoord) * shadow;
+	color *= texture(material.texture, vertex.texcoord) * max(shadow, 0.2);
 }

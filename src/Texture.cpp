@@ -111,6 +111,13 @@ void Texture::bind(GLint unit, bool compareToRef) const
 			compareToRef ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);
 }
 
+void Texture::setup(const ShaderProgram &program, const char *name,
+	GLint unit, bool compareToRef) const
+{
+	bind(unit, compareToRef);
+	glUniform1i(glGetUniformLocation(program.getHandle(), name), unit);
+}
+
 bool Texture::load2DTGA(const char *name, bool genMIPs)
 {
 	ASSERT(name);
