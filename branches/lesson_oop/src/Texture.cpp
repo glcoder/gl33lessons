@@ -26,19 +26,11 @@ static void PNGError(png_structp png_ptr, png_const_charp msg)
 	longjmp(png_ptr->png_jmpbuf, 1);
 }
 
-// libpng custom reader
 static void PNGAPI PNGRead(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	ASSERT(png_ptr->io_ptr);
 	memcpy(data, png_ptr->io_ptr, length);
 	png_ptr->io_ptr = (uint8_t *)png_ptr->io_ptr + length;
-
-	/*
-	png_size_t check;
-	check = (png_size_t)reader->read((void*)data, length);
-	if (check != length)
-		png_error(png_ptr, "Read Error");
-	*/
 }
 
 Texture::Texture():
@@ -114,11 +106,9 @@ void Texture::bind(GLint unit, bool compareToRef) const
 	glActiveTexture(GL_TEXTURE0 + unit);
 	glBindTexture(m_target, m_handle);
 
-	if (m_target == GL_TEXTURE_2D_MULTISAMPLE)
-		return;
-
-	glTexParameteri(m_target, GL_TEXTURE_COMPARE_MODE,
-		compareToRef ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);
+	if (m_target != GL_TEXTURE_2D_MULTISAMPLE)
+		glTexParameteri(m_target, GL_TEXTURE_COMPARE_MODE,
+			compareToRef ? GL_COMPARE_REF_TO_TEXTURE : GL_NONE);
 }
 
 bool Texture::load2DTGA(const char *name, bool genMIPs)
@@ -152,12 +142,12 @@ bool Texture::load2DTGA(const char *name, bool genMIPs)
 
 	if (header->bitperpel == 24)
 	{
+		internalFormat = GL_RGB8;
 		format         = GL_BGR;
-		internalFormat = GL_RGB;
 	} else
 	{
+		internalFormat = GL_RGBA8;
 		format         = GL_BGRA;
-		internalFormat = GL_RGBA;
 	}
 
 	image2D(GL_PVOID(buffer + sizeof(TGAHeader) + header->idlength),
@@ -218,7 +208,6 @@ bool Texture::load2DPNG(const char *name, bool genMIPs)
 
 	if (setjmp(png_jmpbuf(png_ptr)))
 	{
-		//LOG_ERROR("Failed to set PNG jmpbuf\n");
 		png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 		delete[] buffer;
 		return false;
@@ -255,15 +244,15 @@ bool Texture::load2DPNG(const char *name, bool genMIPs)
 	{
 		case PNG_COLOR_TYPE_GRAY:
 		case PNG_COLOR_TYPE_GRAY_ALPHA:
-			internalFormat = GL_RED;
+			internalFormat = GL_R8;
 			format         = GL_RED;
 		break;
 		case PNG_COLOR_TYPE_RGB:
-			internalFormat = GL_RGB;
+			internalFormat = GL_RGB8;
 			format         = GL_RGB;
 		break;
 		case PNG_COLOR_TYPE_RGBA:
-			internalFormat = GL_RGBA;
+			internalFormat = GL_RGBA8;
 			format         = GL_RGBA;
 		break;
 		default:

@@ -14,11 +14,24 @@ public:
 	Camera();
 	~Camera();
 
+	/*
 	void setPosition(const vec3 &position);
 	void setRotation(const vec3 &rotation);
 	void setProjection(const mat4 &projection);
+	*/
+
+	void lookAt(const vec3 &position, const vec3 &center, const vec3 &up);
+
+	void perspective(float fov, float aspect, float zNear, float zFar);
+	void orthographic(float left, float right, float bottom, float top,
+		float zNear, float zFar);
+
+	void rotate(const vec3 &angles);
+	void move(const vec3 &destination);
 
 	void setup(const ShaderProgram &program, const RenderObject &object) const;
+
+	void setupLight(const ShaderProgram &program) const;
 
 protected:
 	vec3 m_position;
