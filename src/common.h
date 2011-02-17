@@ -3,7 +3,9 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
+#define _WIN32_WINNT        0x0501 // XP minimum
 #include <windows.h>
+#include <mmsystem.h>
 #endif
 
 #include <cstdio>
