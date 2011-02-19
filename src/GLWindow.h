@@ -39,11 +39,11 @@ void GLWindowDestroy();
 // ручное изменение размера и режима окна
 void GLWindowSetSize(int width, int height, bool fullScreen = false);
 
-bool GLWindowInit(const GLWindow &window);
-void GLWindowClear(const GLWindow &window);
-void GLWindowRender(const GLWindow &window);
-void GLWindowUpdate(const GLWindow &window, double deltaTime);
-void GLWindowInput(const GLWindow &window);
+bool GLWindowInit(const GLWindow *window);
+void GLWindowClear(const GLWindow *window);
+void GLWindowRender(const GLWindow *window);
+void GLWindowUpdate(const GLWindow *window, double deltaTime);
+void GLWindowInput(const GLWindow *window);
 
 // основной цикл окна, обработка оконных сообщений и вызов необходимых функций
 int GLWindowMainLoop();

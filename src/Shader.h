@@ -3,12 +3,14 @@
 
 #include "common.h"
 #include "OpenGL.h"
-#include "Light.h"
-#include "Material.h"
-#include "Camera.h"
 
-// создает шейдерную программу, загружает шейдеры из файлов и собирает шейдерную программу
-GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName);
+// типы шейдеров
+#define ST_VERTEX     0x01
+#define ST_FRAGMENT   0x02
+
+// создает шейдерную программу и загружает шейдеры указанные в type из файла fileName
+// вершинный шейдер загружается из файла fileName.vs, фрагментный fileName.fs
+GLuint ShaderProgramCreateFromFile(const char *fileName, int type);
 
 // делает указанную шейдерную программу неактивной и удаляет ее
 void ShaderProgramDestroy(GLuint program);

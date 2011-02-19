@@ -34,7 +34,7 @@ inline const mat4 GLRotationZ(float angle)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 GLFromEuler(float x, float y, float z)
+inline const mat4 GLRotation(float x, float y, float z)
 {
 	const float cx = cosf(x * math_radians), sx = sinf(x * math_radians),
 	            cy = cosf(y * math_radians), sy = sinf(y * math_radians),
@@ -47,41 +47,9 @@ inline const mat4 GLFromEuler(float x, float y, float z)
 	            0, 0, 0, 1);
 }
 
-inline const mat4 GLFromEuler(const vec3 &r)
+inline const mat4 GLRotation(const vec3 &r)
 {
-	return GLFromEuler(r.x, r.y, r.z);
-}
-
-inline const vec3 GLToEuler(const mat4 &M)
-{
-	vec3 angle;
-	float x, y, C;
-
-	angle.y = asinf(M[2]);
-	C       = cosf(angle.y);
-	angle.y *= math_degrees;
-
-	if (fabsf(C) > math_epsilon)
-	{
-		x       =  M[10] / C;
-		y       = -M[ 6] / C;
-		angle.x = atan2f(y, x) * math_degrees;
-		x       =  M[ 0] / C;
-		y       = -M[ 1] / C;
-		angle.z = atan2f(y, x) * math_degrees;
-	} else
-	{
-		angle.x = 0.0f;
-		x       =  M[ 5];
-		y       =  M[ 4];
-		angle.z = atan2f(y, x) * math_degrees;
-	}
-
-	if (angle.x < 0) angle.x += 360;
-	if (angle.y < 0) angle.y += 360;
-	if (angle.z < 0) angle.z += 360;
-
-	return angle;
+	return GLRotation(r.x, r.y, r.z);
 }
 
 inline const mat4 GLScale(float x, float y, float z)

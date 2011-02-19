@@ -15,7 +15,6 @@ struct Mesh
 	mat3 rotation;
 };
 
-void MeshCreateQuad(Mesh &mesh, const vec3 &position, float size);
 void MeshCreatePlane(Mesh &mesh, const vec3 &position, float size);
 void MeshCreateCube(Mesh &mesh, const vec3 &position, float size);
 void MeshCreateSphere(Mesh &mesh, const vec3 &position, float size);
