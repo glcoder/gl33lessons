@@ -368,5 +368,5 @@ _В процессе_
 == Исходный код и программа ==
 
 Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
-  * Используя SVN [http://code.google.com/p/gl33lessons/source/browse/#svn/branches/lesson05 lesson06]
+  * Используя SVN [http://code.google.com/p/gl33lessons/source/browse/#svn/tags/lesson06 lesson06]
   * Скачав архив (включает программу) [http://code.google.com/p/gl33lessons/downloads/detail?name=lesson06.zip lesson06.zip]
