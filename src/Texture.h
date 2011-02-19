@@ -7,9 +7,6 @@
 // создает текстуру из TGA-файла с изображением
 GLuint TextureCreateFromTGA(const char *fileName);
 
-// создание "пустой текстуры"
-GLuint TextureCreateEmpty(GLint internalFormat, GLenum format, GLenum type, GLsizei width, GLsizei height);
-
 // создание "пустой" текстуры для хранения depth-данных
 GLuint TextureCreateDepth(GLsizei width, GLsizei height);
 

@@ -1,5 +1,8 @@
-// текстуры
-uniform sampler2D colorTexture, depthTexture;
+// параметры материала
+uniform struct Material
+{
+	sampler2D texture;
+} material;
 
 // параметры полученные из вершинного шейдера
 in Vertex
@@ -12,5 +15,5 @@ layout(location = FRAG_OUTPUT0) out vec4 color;
 void main(void)
 {
 	// вычислим итоговый цвет пикселя на экране с учетом текстуры
-	color = texture(colorTexture, Vert.texcoord);
+	color = texture(material.texture, Vert.texcoord);
 }

@@ -106,7 +106,6 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		// проверим статус компиляции шейдера
 		if (ShaderStatus(shader, GL_COMPILE_STATUS) != GL_TRUE)
 		{
-			LOG_ERROR("Fail to compile '%s'\n", vsName);
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;
@@ -152,7 +151,6 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		// проверим статус компиляции шейдера
 		if (ShaderStatus(shader, GL_COMPILE_STATUS) != GL_TRUE)
 		{
-			LOG_ERROR("Fail to compile '%s'\n", fsName);
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;

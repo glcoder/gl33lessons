@@ -80,7 +80,7 @@ GLuint TextureCreateFromTGA(const char *fileName)
 	return texture;
 }
 
-GLuint TextureCreateEmpty(GLint internalFormat, GLenum format, GLenum type, GLsizei width, GLsizei height)
+GLuint TextureCreateDepth(GLsizei width, GLsizei height)
 {
 	ASSERT(width);
 	ASSERT(height);
@@ -101,25 +101,11 @@ GLuint TextureCreateEmpty(GLint internalFormat, GLenum format, GLenum type, GLsi
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	// соаздем "пустую" текстуру под depth-данные
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, NULL);
-
-	// проверим на наличие ошибок
-	OPENGL_CHECK_FOR_ERRORS();
-
-	return texture;
-}
-
-GLuint TextureCreateDepth(GLsizei width, GLsizei height)
-{
-	ASSERT(width);
-	ASSERT(height);
-
-	// создаем пустую текстуру
-	GLuint texture = TextureCreateEmpty(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, width, height);
-
 	// необходимо для использования depth-текстуры как shadow map
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+
+	// соаздем "пустую" текстуру под depth-данные
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
 	// проверим на наличие ошибок
 	OPENGL_CHECK_FOR_ERRORS();

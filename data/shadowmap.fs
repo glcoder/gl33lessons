@@ -60,6 +60,7 @@ void main(void)
 	vec3 viewDir  = normalize(Vert.viewDir);
 
 	// коэффициент затенения
+	//float shadow = textureProj(depthTexture, Vert.smcoord);
 	float shadow  = PCF(Vert.smcoord);
 
 	// добавим собственное свечение материала
