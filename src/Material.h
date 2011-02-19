@@ -4,7 +4,6 @@
 #include "common.h"
 #include "math/math3d.h"
 #include "OpenGL.h"
-#include "Texture.h"
 
 struct Material
 {

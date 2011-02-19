@@ -1,13 +1,11 @@
-// текстурный самплер карты глубины
-uniform sampler2DShadow depthTexture;
-
-// параметры точеченого источника освещения
+// параметры источника освещения
 uniform struct Light
 {
 	vec4 ambient;
 	vec4 diffuse;
 	vec4 specular;
 	vec4 position;
+	vec3 attenuation;
 } light;
 
 // параметры материала
@@ -25,32 +23,14 @@ uniform struct Material
 // параметры полученные из вершинного шейдера
 in Vertex
 {
-	vec2 texcoord;
-	vec4 smcoord;
-	vec3 normal;
-	vec3 lightDir;
-	vec3 viewDir;
+	vec2  texcoord;
+	vec3  normal;
+	vec3  lightDir;
+	vec3  viewDir;
+	float distance;
 } Vert;
 
 layout(location = FRAG_OUTPUT0) out vec4 color;
-
-// сглаживание краев тени
-float PCF(in vec4 smcoord)
-{
-	float res = 0.0;
-
-	res += textureProjOffset(depthTexture, smcoord, ivec2(-1,-1));
-	res += textureProjOffset(depthTexture, smcoord, ivec2( 0,-1));
-	res += textureProjOffset(depthTexture, smcoord, ivec2( 1,-1));
-	res += textureProjOffset(depthTexture, smcoord, ivec2(-1, 0));
-	res += textureProjOffset(depthTexture, smcoord, ivec2( 0, 0));
-	res += textureProjOffset(depthTexture, smcoord, ivec2( 1, 0));
-	res += textureProjOffset(depthTexture, smcoord, ivec2(-1, 1));
-	res += textureProjOffset(depthTexture, smcoord, ivec2( 0, 1));
-	res += textureProjOffset(depthTexture, smcoord, ivec2( 1, 1));
-
-	return (res / 9.0);
-}
 
 void main(void)
 {
@@ -59,8 +39,10 @@ void main(void)
 	vec3 lightDir = normalize(Vert.lightDir);
 	vec3 viewDir  = normalize(Vert.viewDir);
 
-	// коэффициент затенения
-	float shadow  = PCF(Vert.smcoord);
+	// коэффициент затухания
+	float attenuation = 1.0 / (light.attenuation[0] +
+		light.attenuation[1] * Vert.distance +
+		light.attenuation[2] * Vert.distance * Vert.distance);
 
 	// добавим собственное свечение материала
 	color = material.emission;
@@ -77,5 +59,5 @@ void main(void)
 	color += material.specular * light.specular * RdotVpow;
 
 	// вычислим итоговый цвет пикселя на экране с учетом текстуры
-	color *= texture(material.texture, Vert.texcoord) * shadow;
+	color *= texture(material.texture, Vert.texcoord) * attenuation;
 }

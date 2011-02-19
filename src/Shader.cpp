@@ -61,11 +61,15 @@ GLint ShaderStatus(GLuint shader, GLenum param)
 	return status;
 }
 
-GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
+GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 {
+	ASSERT(fileName);
+	ASSERT(type);
+
 	GLuint   program, shader;
 	uint8_t  *shaderSource;
 	uint32_t sourceLength;
+	char     shaderName[0x100];
 
 	// слздадим шейдерную программу
 	if ((program = glCreateProgram()) == 0)
@@ -74,8 +78,10 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		return 0;
 	}
 
+	memset(shaderName, 0, 0x100);
+
 	// если необходимо создать вершинный шейдер
-	if (vsName)
+	if (type & ST_VERTEX)
 	{
 		// создадим вершинный шейдер
 		if ((shader = glCreateShader(GL_VERTEX_SHADER)) == 0)
@@ -85,8 +91,11 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 			return 0;
 		}
 
+		// имя вершинного шейдера
+		snprintf(shaderName, 0xFF, "%s.vs", fileName);
+
 		// загрузим вершинный шейдер
-		if (!LoadFile(vsName, true, &shaderSource, &sourceLength))
+		if (!LoadFile(shaderName, true, &shaderSource, &sourceLength))
 		{
 			glDeleteShader(shader);
 			glDeleteProgram(program);
@@ -106,7 +115,6 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		// проверим статус компиляции шейдера
 		if (ShaderStatus(shader, GL_COMPILE_STATUS) != GL_TRUE)
 		{
-			LOG_ERROR("Fail to compile '%s'\n", vsName);
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;
@@ -121,7 +129,7 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 	}
 
 	// если необходимо создать фрагментный шейдер
-	if (fsName)
+	if (type & ST_FRAGMENT)
 	{
 		// создадим вершинный шейдер
 		if ((shader = glCreateShader(GL_FRAGMENT_SHADER)) == 0)
@@ -131,8 +139,11 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 			return 0;
 		}
 
+		// имя фрагментного шейдера
+		snprintf(shaderName, 0xFF, "%s.fs", fileName);
+
 		// загрузим фрагментный шейдер
-		if (!LoadFile(fsName, true, &shaderSource, &sourceLength))
+		if (!LoadFile(shaderName, true, &shaderSource, &sourceLength))
 		{
 			glDeleteShader(shader);
 			glDeleteProgram(program);
@@ -152,7 +163,6 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		// проверим статус компиляции шейдера
 		if (ShaderStatus(shader, GL_COMPILE_STATUS) != GL_TRUE)
 		{
-			LOG_ERROR("Fail to compile '%s'\n", fsName);
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;
@@ -168,7 +178,7 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 
 	OPENGL_CHECK_FOR_ERRORS();
 
-	return ShaderProgramLink(program) ? program : 0;
+	return program;
 }
 
 void ShaderProgramDestroy(GLuint program)

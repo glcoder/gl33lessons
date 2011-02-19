@@ -11,7 +11,7 @@ OBJ := $(BUILD_DIR)/common.o $(BUILD_DIR)/Logger.o \
 	$(BUILD_DIR)/Light.o $(BUILD_DIR)/Material.o \
 	$(BUILD_DIR)/main.o
 
-BIN := lesson07.exe
+BIN := lesson05.exe
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	g++ -c $(CPPFLAGS) $< -o $@
