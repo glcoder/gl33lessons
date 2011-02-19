@@ -2,45 +2,44 @@
 
 GLenum g_OpenGLError = GL_NO_ERROR;
 
-#define OPENGL_INT_PRINT_DEBUG(name) \
-	GLint info_ ## name; \
-	glGetIntegerv(name, &info_ ## name); \
-	LOG_DEBUG(#name " = %d\n", info_ ## name);
-
-void OpenGLPrintDebugInfo()
+GLint ShaderProgramStatus(GLuint program, GLenum param)
 {
-	// выведем в лог немного информации о контексте OpenGL
-	GLint major, minor;
-	glGetIntegerv(GL_MAJOR_VERSION, &major);
-	glGetIntegerv(GL_MINOR_VERSION, &minor);
-	LOG_DEBUG("OpenGL render context information:\n"
-		"  Renderer       : %s\n"
-		"  Vendor         : %s\n"
-		"  Version        : %s\n"
-		"  GLSL version   : %s\n"
-		"  OpenGL version : %d.%d\n",
-		(const char*)glGetString(GL_RENDERER),
-		(const char*)glGetString(GL_VENDOR),
-		(const char*)glGetString(GL_VERSION),
-		(const char*)glGetString(GL_SHADING_LANGUAGE_VERSION),
-		major, minor
-	);
+	GLint status, length;
+	GLchar buffer[1024];
 
-	// значения различных параметров OpenGL
-	OPENGL_INT_PRINT_DEBUG(GL_MAX_VERTEX_ATTRIBS);
-	OPENGL_INT_PRINT_DEBUG(GL_MAX_VERTEX_UNIFORM_COMPONENTS);
-	OPENGL_INT_PRINT_DEBUG(GL_MAX_TEXTURE_IMAGE_UNITS);
-	OPENGL_INT_PRINT_DEBUG(GL_MAX_COLOR_ATTACHMENTS);
-	OPENGL_INT_PRINT_DEBUG(GL_MIN_PROGRAM_TEXEL_OFFSET);
-	OPENGL_INT_PRINT_DEBUG(GL_MAX_PROGRAM_TEXEL_OFFSET);
+	glGetProgramiv(program, param, &status);
+
+	if (status != GL_TRUE)
+	{
+		glGetProgramInfoLog(program, 1024, &length, buffer);
+		LOG_ERROR("Shader program: %s\n", (const char*)buffer);
+	}
 
 	OPENGL_CHECK_FOR_ERRORS();
+
+	return status;
+}
+
+GLint ShaderStatus(GLuint shader, GLenum param)
+{
+	GLint status, length;
+	GLchar buffer[1024];
+
+	glGetShaderiv(shader, param, &status);
+
+	if (status != GL_TRUE)
+	{
+		glGetShaderInfoLog(shader, 1024, &length, buffer);
+		LOG_ERROR("Shader: %s\n", (const char*)buffer);
+	}
+
+	OPENGL_CHECK_FOR_ERRORS();
+
+	return status;
 }
 
 bool OpenGLInitExtensions()
 {
-	// Texture
-	OPENGL_GET_PROC(PFNGLACTIVETEXTUREPROC, glActiveTexture);
 	// VAO
 	OPENGL_GET_PROC(PFNGLGENVERTEXARRAYSPROC,    glGenVertexArrays);
 	OPENGL_GET_PROC(PFNGLDELETEVERTEXARRAYSPROC, glDeleteVertexArrays);
@@ -51,8 +50,6 @@ bool OpenGLInitExtensions()
 	OPENGL_GET_PROC(PFNGLBINDBUFFERPROC,    glBindBuffer);
 	OPENGL_GET_PROC(PFNGLBUFFERDATAPROC,    glBufferData);
 	OPENGL_GET_PROC(PFNGLBUFFERSUBDATAPROC, glBufferSubData);
-	OPENGL_GET_PROC(PFNGLMAPBUFFERPROC,     glMapBuffer);
-	OPENGL_GET_PROC(PFNGLUNMAPBUFFERPROC,   glUnmapBuffer);
 	// Shaders
 	OPENGL_GET_PROC(PFNGLCREATEPROGRAMPROC,     glCreateProgram);
 	OPENGL_GET_PROC(PFNGLDELETEPROGRAMPROC,     glDeleteProgram);
@@ -69,34 +66,20 @@ bool OpenGLInitExtensions()
 	OPENGL_GET_PROC(PFNGLDETACHSHADERPROC,      glDetachShader);
 	OPENGL_GET_PROC(PFNGLGETSHADERIVPROC,       glGetShaderiv);
 	OPENGL_GET_PROC(PFNGLGETSHADERINFOLOGPROC,  glGetShaderInfoLog);
-	// Attributes
+	// Shaders attributes
 	OPENGL_GET_PROC(PFNGLGETATTRIBLOCATIONPROC,        glGetAttribLocation);
 	OPENGL_GET_PROC(PFNGLVERTEXATTRIBPOINTERPROC,      glVertexAttribPointer);
 	OPENGL_GET_PROC(PFNGLENABLEVERTEXATTRIBARRAYPROC,  glEnableVertexAttribArray);
 	OPENGL_GET_PROC(PFNGLDISABLEVERTEXATTRIBARRAYPROC, glDisableVertexAttribArray);
-	// Uniforms
+	// Shaders uniforms
 	OPENGL_GET_PROC(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation);
-	OPENGL_GET_PROC(PFNGLUNIFORMMATRIX3FVPROC,   glUniformMatrix3fv);
 	OPENGL_GET_PROC(PFNGLUNIFORMMATRIX4FVPROC,   glUniformMatrix4fv);
-	OPENGL_GET_PROC(PFNGLUNIFORM1IPROC,          glUniform1i);
-	OPENGL_GET_PROC(PFNGLUNIFORM1FVPROC,         glUniform1fv);
-	OPENGL_GET_PROC(PFNGLUNIFORM3FVPROC,         glUniform3fv);
-	OPENGL_GET_PROC(PFNGLUNIFORM4FVPROC,         glUniform4fv);
-	// FBO
-	OPENGL_GET_PROC(PFNGLBINDFRAMEBUFFERPROC,        glBindFramebuffer);
-	OPENGL_GET_PROC(PFNGLDELETEFRAMEBUFFERSPROC,     glDeleteFramebuffers);
-	OPENGL_GET_PROC(PFNGLGENFRAMEBUFFERSPROC,        glGenFramebuffers);
-	OPENGL_GET_PROC(PFNGLCHECKFRAMEBUFFERSTATUSPROC, glCheckFramebufferStatus);
-	OPENGL_GET_PROC(PFNGLFRAMEBUFFERTEXTUREPROC,     glFramebufferTexture);
 
 	OPENGL_CHECK_FOR_ERRORS();
 
 	return true;
 }
-
 // объявим расширения OpenGL
-// Texture
-PFNGLACTIVETEXTUREPROC glActiveTexture = NULL;
 // VAO
 PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays    = NULL;
 PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays = NULL;
@@ -107,8 +90,6 @@ PFNGLDELETEBUFFERSPROC glDeleteBuffers = NULL;
 PFNGLBINDBUFFERPROC    glBindBuffer    = NULL;
 PFNGLBUFFERDATAPROC    glBufferData    = NULL;
 PFNGLBUFFERSUBDATAPROC glBufferSubData = NULL;
-PFNGLMAPBUFFERPROC     glMapBuffer     = NULL;
-PFNGLUNMAPBUFFERPROC   glUnmapBuffer   = NULL;
 // Shaders
 PFNGLCREATEPROGRAMPROC     glCreateProgram     = NULL;
 PFNGLDELETEPROGRAMPROC     glDeleteProgram     = NULL;
@@ -125,22 +106,12 @@ PFNGLATTACHSHADERPROC      glAttachShader      = NULL;
 PFNGLDETACHSHADERPROC      glDetachShader      = NULL;
 PFNGLGETSHADERIVPROC       glGetShaderiv       = NULL;
 PFNGLGETSHADERINFOLOGPROC  glGetShaderInfoLog  = NULL;
-// Attributes
+// Shaders attributes
 PFNGLGETATTRIBLOCATIONPROC        glGetAttribLocation        = NULL;
 PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer      = NULL;
 PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray  = NULL;
 PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray = NULL;
-// Uniforms
+// Shaders uniforms
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
-PFNGLUNIFORMMATRIX3FVPROC   glUniformMatrix3fv   = NULL;
 PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv   = NULL;
-PFNGLUNIFORM1IPROC          glUniform1i          = NULL;
-PFNGLUNIFORM1FVPROC         glUniform1fv         = NULL;
-PFNGLUNIFORM3FVPROC         glUniform3fv         = NULL;
-PFNGLUNIFORM4FVPROC         glUniform4fv         = NULL;
-// FBO
-PFNGLBINDFRAMEBUFFERPROC        glBindFramebuffer        = NULL;
-PFNGLDELETEFRAMEBUFFERSPROC     glDeleteFramebuffers     = NULL;
-PFNGLGENFRAMEBUFFERSPROC        glGenFramebuffers        = NULL;
-PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = NULL;
-PFNGLFRAMEBUFFERTEXTUREPROC     glFramebufferTexture     = NULL;
+

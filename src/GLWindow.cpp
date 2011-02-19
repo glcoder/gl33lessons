@@ -60,14 +60,11 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		0
 	};
 
-	// установим зерно генератора случайных чисел
-	srand((unsigned int)time(NULL));
-
 	// инциализация таймера
 	QueryPerformanceFrequency(&g_qpc);
 	ASSERT(g_qpc.QuadPart > 0);
 
-	g_timerFrequency = 1.0 / (double)g_qpc.QuadPart;
+	g_timerFrequency = 1.0 / g_qpc.QuadPart;
 
 	g_hInstance = (HINSTANCE)GetModuleHandle(NULL);
 
@@ -163,8 +160,22 @@ bool GLWindowCreate(const char *title, int width, int height, bool fullScreen)
 		return false;
 	}
 
-	// вывод в лог-файл различной информации по OpenGL
-	OpenGLPrintDebugInfo();
+	// выведем в лог немного информации о контексте OpenGL
+	int major, minor;
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
+	LOG_DEBUG("OpenGL render context information:\n"
+		"  Renderer       : %s\n"
+		"  Vendor         : %s\n"
+		"  Version        : %s\n"
+		"  GLSL version   : %s\n"
+		"  OpenGL version : %d.%d\n",
+		(const char*)glGetString(GL_RENDERER),
+		(const char*)glGetString(GL_VENDOR),
+		(const char*)glGetString(GL_VERSION),
+		(const char*)glGetString(GL_SHADING_LANGUAGE_VERSION),
+		major, minor
+	);
 
 	// попробуем загрузить расширения OpenGL
 	if (!OpenGLInitExtensions())
@@ -180,12 +191,13 @@ void GLWindowDestroy()
 {
 	g_window.running = g_window.active = false;
 
-	GLWindowClear(g_window);
+	GLWindowClear(&g_window);
 
 	// восстановим разрешение экрана
 	if (g_window.fullScreen)
 	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
+		ShowCursor(TRUE);
 		g_window.fullScreen = false;
 	}
 
@@ -232,7 +244,10 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 
 	// если мы возвращаемся из полноэкранного режима
 	if (g_window.fullScreen && !fullScreen)
+	{
 		ChangeDisplaySettings(NULL, CDS_RESET);
+		ShowCursor(TRUE);
+	}
 
 	g_window.fullScreen = fullScreen;
 
@@ -258,6 +273,8 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 	// если был запрошен полноэкранный режим и его удалось установить
 	if (g_window.fullScreen)
 	{
+		ShowCursor(FALSE);
+
 		style   = WS_POPUP;
 		exStyle = WS_EX_APPWINDOW | WS_EX_TOPMOST;
 
@@ -306,55 +323,49 @@ void GLWindowSetSize(int width, int height, bool fullScreen)
 	OPENGL_CHECK_FOR_ERRORS();
 }
 
-// основной цикл окна
 int GLWindowMainLoop()
 {
 	MSG    msg;
-	double deltaTime, beginFrameTime, fixedTimeStep;
+	double beginFrameTime, deltaTime;
 
-	// пользовательская инициализация
-	g_window.running = g_window.active = GLWindowInit(g_window);
-
-	deltaTime      = 0.0;
-	fixedTimeStep  = 1.0 / 100.0;
+	// основной цикл окна
+	g_window.running = g_window.active = GLWindowInit(&g_window);
 
 	while (g_window.running)
 	{
 
 		// обработаем сообщения из очереди сообщений
-		while (PeekMessage(&msg, g_hWnd, 0, 0, PM_NOREMOVE))
+		while (PeekMessage(&msg, g_hWnd, 0, 0, PM_REMOVE))
 		{
-			if(!GetMessage(&msg, g_hWnd, 0, 0) || msg.message == WM_QUIT)
+			if (msg.message == WM_QUIT)
 			{
 				g_window.running = false;
 				break;
 			}
-
-			TranslateMessage(&msg);
+			// TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 
-		// начало обработки текущего кадра
 		beginFrameTime = GetTimerTicks();
 
+		// начало обработки текущего кадра
+
+		// чтобы не отжирать 100% CPU небольшой Sleep
+		Sleep(2);
+
 		// обработка ввода
-		GLWindowInput(g_window);
+		GLWindowInput(&g_window);
 
 		// если окно в рабочем режиме и активно
 		if (g_window.running && g_window.active)
 		{
 			// рендер сцены
-			GLWindowRender(g_window);
-			glFinish();
+			GLWindowRender(&g_window);
 			SwapBuffers(g_hDC);
 
 			// обновление сцены
-			deltaTime += GetTimerTicks() - beginFrameTime;
-			while (deltaTime >= fixedTimeStep)
-			{
-				GLWindowUpdate(g_window, deltaTime);
-				deltaTime -= fixedTimeStep;
-			}
+			deltaTime = GetTimerTicks() - beginFrameTime;
+			GLWindowUpdate(&g_window, deltaTime);
 		}
 	}
 
@@ -373,8 +384,8 @@ LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_MBUTTONDOWN:
 		case WM_MBUTTONUP:
 		{
-			g_input.cursorPos[0] = (int)LOWORD(lParam);
-			g_input.cursorPos[1] = (int)HIWORD(lParam);
+			g_input.cursorPos[0] = (int16_t)LOWORD(lParam);
+			g_input.cursorPos[1] = (int16_t)HIWORD(lParam);
 
 			if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP)
 				g_input.buttonState[0] = (msg == WM_LBUTTONDOWN ? INPUT_PRESSED : INPUT_UP);
@@ -390,8 +401,8 @@ LRESULT CALLBACK GLWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_MOUSEMOVE:
 		{
-			g_input.cursorPos[0] = (int)LOWORD(lParam);
-			g_input.cursorPos[1] = (int)HIWORD(lParam);
+			g_input.cursorPos[0] = (int16_t)LOWORD(lParam);
+			g_input.cursorPos[1] = (int16_t)HIWORD(lParam);
 
 			return FALSE;
 		}
@@ -494,7 +505,7 @@ bool InputIsButtonClick(uint8_t button)
 	return pressed;
 }
 
-void InputGetCursorPos(int *x, int *y)
+void InputGetCursorPos(int16_t *x, int16_t *y)
 {
 	ASSERT(x);
 	ASSERT(y);
@@ -503,7 +514,7 @@ void InputGetCursorPos(int *x, int *y)
 	*y = g_input.cursorPos[1];
 }
 
-void InputSetCursorPos(int x, int y)
+void InputSetCursorPos(int16_t x, int16_t y)
 {
 	POINT pos = {x, y};
 	ClientToScreen(g_hWnd, &pos);
@@ -511,9 +522,4 @@ void InputSetCursorPos(int x, int y)
 
 	g_input.cursorPos[0] = x;
 	g_input.cursorPos[1] = y;
-}
-
-void InputShowCursor(bool visible)
-{
-	ShowCursor(visible ? TRUE : FALSE);
 }

@@ -4,8 +4,6 @@
 #include "common.h"
 #include "OpenGL.h"
 
-#define FIXED_TIMESTAMP 1.0e-3
-
 #define INPUT_BUTTON_LEFT   0
 #define INPUT_BUTTON_RIGHT  1
 #define INPUT_BUTTON_MIDDLE 2
@@ -28,7 +26,7 @@ struct Input
 {
 	uint8_t keyState[256];
 	uint8_t buttonState[3];
-	int     cursorPos[2];
+	int16_t cursorPos[2];
 };
 
 // создание окна с поддержкой OpenGL
@@ -39,11 +37,11 @@ void GLWindowDestroy();
 // ручное изменение размера и режима окна
 void GLWindowSetSize(int width, int height, bool fullScreen = false);
 
-bool GLWindowInit(const GLWindow &window);
-void GLWindowClear(const GLWindow &window);
-void GLWindowRender(const GLWindow &window);
-void GLWindowUpdate(const GLWindow &window, double deltaTime);
-void GLWindowInput(const GLWindow &window);
+bool GLWindowInit(const GLWindow *window);
+void GLWindowClear(const GLWindow *window);
+void GLWindowRender(const GLWindow *window);
+void GLWindowUpdate(const GLWindow *window, double deltaTime);
+void GLWindowInput(const GLWindow *window);
 
 // основной цикл окна, обработка оконных сообщений и вызов необходимых функций
 int GLWindowMainLoop();
@@ -59,11 +57,8 @@ bool InputIsButtonDown(uint8_t button);
 bool InputIsButtonClick(uint8_t button);
 
 // получить текущее положение курсора
-void InputGetCursorPos(int *x, int *y);
+void InputGetCursorPos(int16_t *x, int16_t *y);
 // задать положение курсора
-void InputSetCursorPos(int x, int y);
-
-// скрыть или показать курсор
-void InputShowCursor(bool visible);
+void InputSetCursorPos(int16_t x, int16_t y);
 
 #endif /* GLWINDOW_H */

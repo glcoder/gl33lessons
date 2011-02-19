@@ -70,7 +70,7 @@
 				Name="VCLinkerTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalDependencies="opengl32.lib"
-				OutputFile="lesson07.exe"
+				OutputFile="lesson02.exe"
 				LinkIncremental="1"
 				GenerateManifest="false"
 				ManifestFile="build\lesson.manifest"
@@ -150,54 +150,6 @@
 			</File>
 			<File
 				RelativePath=".\src\OpenGL.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Shader.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Shader.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Texture.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Texture.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Mesh.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Mesh.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Camera.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Camera.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Light.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Light.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Material.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Material.h"
 				>
 			</File>
 		</Filter>
