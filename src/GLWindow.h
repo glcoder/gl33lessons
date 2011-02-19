@@ -4,8 +4,6 @@
 #include "common.h"
 #include "OpenGL.h"
 
-#define FIXED_TIMESTAMP 1.0e-3
-
 #define INPUT_BUTTON_LEFT   0
 #define INPUT_BUTTON_RIGHT  1
 #define INPUT_BUTTON_MIDDLE 2
@@ -39,11 +37,11 @@ void GLWindowDestroy();
 // ручное изменение размера и режима окна
 void GLWindowSetSize(int width, int height, bool fullScreen = false);
 
-bool GLWindowInit(const GLWindow &window);
-void GLWindowClear(const GLWindow &window);
-void GLWindowRender(const GLWindow &window);
-void GLWindowUpdate(const GLWindow &window, double deltaTime);
-void GLWindowInput(const GLWindow &window);
+bool GLWindowInit(const GLWindow *window);
+void GLWindowClear(const GLWindow *window);
+void GLWindowRender(const GLWindow *window);
+void GLWindowUpdate(const GLWindow *window, double deltaTime);
+void GLWindowInput(const GLWindow *window);
 
 // основной цикл окна, обработка оконных сообщений и вызов необходимых функций
 int GLWindowMainLoop();
@@ -62,8 +60,5 @@ bool InputIsButtonClick(uint8_t button);
 void InputGetCursorPos(int *x, int *y);
 // задать положение курсора
 void InputSetCursorPos(int x, int y);
-
-// скрыть или показать курсор
-void InputShowCursor(bool visible);
 
 #endif /* GLWINDOW_H */

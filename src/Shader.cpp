@@ -1,24 +1,5 @@
 #include "Shader.h"
 
-// немного магии :)
-#define DEFINE_TO_STR_HELPER(x) #x
-#define DEFINE_TO_STR(x)        "#define " #x " " DEFINE_TO_STR_HELPER(x) "\n"
-
-// набор параметров для вершинного шейдера
-static const char vertexShaderDefines[] =
-	"#version 330 core\n"
-	DEFINE_TO_STR(VERT_POSITION)
-	DEFINE_TO_STR(VERT_TEXCOORD)
-	DEFINE_TO_STR(VERT_NORMAL)
-	"\n";
-
-// набор параметров для фрагментного шейдера
-static const char fragmentShaderDefines[] =
-	"#version 330 core\n"
-	DEFINE_TO_STR(FRAG_OUTPUT0)
-	"\n";
-
-
 // проверка статуса шейдерной программы
 GLint ShaderProgramStatus(GLuint program, GLenum param)
 {
@@ -61,11 +42,15 @@ GLint ShaderStatus(GLuint shader, GLenum param)
 	return status;
 }
 
-GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
+GLuint ShaderProgramCreateFromFile(const char *fileName, int type)
 {
+	ASSERT(fileName);
+	ASSERT(type);
+
 	GLuint   program, shader;
 	uint8_t  *shaderSource;
 	uint32_t sourceLength;
+	char     shaderName[0x100];
 
 	// слздадим шейдерную программу
 	if ((program = glCreateProgram()) == 0)
@@ -74,8 +59,10 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		return 0;
 	}
 
+	memset(shaderName, 0, 0x100);
+
 	// если необходимо создать вершинный шейдер
-	if (vsName)
+	if (type & ST_VERTEX)
 	{
 		// создадим вершинный шейдер
 		if ((shader = glCreateShader(GL_VERTEX_SHADER)) == 0)
@@ -85,20 +72,19 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 			return 0;
 		}
 
+		// имя вершинного шейдера
+		snprintf(shaderName, 0xFF, "%s.vs", fileName);
+
 		// загрузим вершинный шейдер
-		if (!LoadFile(vsName, true, &shaderSource, &sourceLength))
+		if (!LoadFile(shaderName, true, &shaderSource, &sourceLength))
 		{
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;
 		}
 
-		// добавим к коду вершинного шейдера параметры
-		const GLchar *source[2] = {(const GLchar*)vertexShaderDefines, (const GLchar*)shaderSource};
-		const GLint  length[2] = {sizeof(vertexShaderDefines) - 1, sourceLength};
-
 		// зададим шейдеру исходный код и скомпилируем его
-		glShaderSource(shader, 2, source, length);
+		glShaderSource(shader, 1, (const GLchar**)&shaderSource, (const GLint*)&sourceLength);
 		glCompileShader(shader);
 
 		delete[] shaderSource;
@@ -106,7 +92,6 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		// проверим статус компиляции шейдера
 		if (ShaderStatus(shader, GL_COMPILE_STATUS) != GL_TRUE)
 		{
-			LOG_ERROR("Fail to compile '%s'\n", vsName);
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;
@@ -121,7 +106,7 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 	}
 
 	// если необходимо создать фрагментный шейдер
-	if (fsName)
+	if (type & ST_FRAGMENT)
 	{
 		// создадим вершинный шейдер
 		if ((shader = glCreateShader(GL_FRAGMENT_SHADER)) == 0)
@@ -131,20 +116,19 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 			return 0;
 		}
 
+		// имя фрагментного шейдера
+		snprintf(shaderName, 0xFF, "%s.fs", fileName);
+
 		// загрузим фрагментный шейдер
-		if (!LoadFile(fsName, true, &shaderSource, &sourceLength))
+		if (!LoadFile(shaderName, true, &shaderSource, &sourceLength))
 		{
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;
 		}
 
-		// добавим к коду фрагментного шейдера параметры
-		const GLchar *source[2] = {(const GLchar*)fragmentShaderDefines, (const GLchar*)shaderSource};
-		const GLint  length[2] = {sizeof(fragmentShaderDefines) - 1, sourceLength};
-
 		// зададим шейдеру исходный код и скомпилируем его
-		glShaderSource(shader, 2, source, length);
+		glShaderSource(shader, 1, (const GLchar**)&shaderSource, (const GLint*)&sourceLength);
 		glCompileShader(shader);
 
 		delete[] shaderSource;
@@ -152,7 +136,6 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 		// проверим статус компиляции шейдера
 		if (ShaderStatus(shader, GL_COMPILE_STATUS) != GL_TRUE)
 		{
-			LOG_ERROR("Fail to compile '%s'\n", fsName);
 			glDeleteShader(shader);
 			glDeleteProgram(program);
 			return 0;
@@ -168,7 +151,7 @@ GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName)
 
 	OPENGL_CHECK_FOR_ERRORS();
 
-	return ShaderProgramLink(program) ? program : 0;
+	return program;
 }
 
 void ShaderProgramDestroy(GLuint program)

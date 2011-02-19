@@ -7,11 +7,9 @@ SOURCE_DIR := src
 OBJ := $(BUILD_DIR)/common.o $(BUILD_DIR)/Logger.o \
 	$(BUILD_DIR)/OpenGL.o $(BUILD_DIR)/GLWindow.o \
 	$(BUILD_DIR)/Shader.o $(BUILD_DIR)/Texture.o \
-	$(BUILD_DIR)/Mesh.o $(BUILD_DIR)/Camera.o \
-	$(BUILD_DIR)/Light.o $(BUILD_DIR)/Material.o \
 	$(BUILD_DIR)/main.o
 
-BIN := lesson07.exe
+BIN := lesson03.exe
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	g++ -c $(CPPFLAGS) $< -o $@

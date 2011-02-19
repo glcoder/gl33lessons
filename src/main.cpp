@@ -1,69 +1,144 @@
-﻿#define WIN32_LEAN_AND_MEAN 1
+#define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
 #include "common.h"
-#include "math/math3d.h"
-#include "math/mathgl.h"
 #include "OpenGL.h"
 #include "GLWindow.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "Mesh.h"
-#include "Camera.h"
-#include "Light.h"
-#include "Material.h"
 
-// вспомогательный макрос
-#define LOAD_SHADER(name) \
-	ShaderProgramCreateFromFile("data/" name ".vs", "data/" name ".fs")
+// данные матрицы
+typedef float Matrix4[16];
 
-struct Posteffect
+// пременные для хранения идентификаторов шейдерной программы и текстуры
+static GLuint shaderProgram = 0, colorTexture = 0;
+
+// для хранения двух углов поворота куба
+static float  cubeRotation[3] = {0.0f, 0.0f, 0.0f};
+
+// матрицы преобразования
+static Matrix4 modelViewProjectionMatrix = {0.0f}, viewMatrix = {0.0f},
+               projectionMatrix = {0.0f}, viewProjectionMatrix = {0.0f};
+
+// индексы полученный из шейдерной программы
+static GLint colorTextureLocation = -1, modelViewProjectionMatrixLocation = -1,
+             positionLocation = -1, texcoordLocation = -1;
+
+// для хранения VAO и VBO связанных с кубом
+static GLuint cubeVBO[3], cubeVAO;
+
+// количество вершин куба
+static const uint32_t cubeVerticesCount = 24;
+// количество индексов куба
+static const uint32_t cubeIndicesCount  = 36;
+
+// координаты вершин куба
+static const float s = 1.0f; // половина размера куба
+static const float cubePositions[cubeVerticesCount][3] = {
+	{-s, s, s}, { s, s, s}, { s,-s, s}, {-s,-s, s}, // front
+	{ s, s,-s}, {-s, s,-s}, {-s,-s,-s}, { s,-s,-s}, // back
+	{-s, s,-s}, { s, s,-s}, { s, s, s}, {-s, s, s}, // top
+	{ s,-s,-s}, {-s,-s,-s}, {-s,-s, s}, { s,-s, s}, // bottom
+	{-s, s,-s}, {-s, s, s}, {-s,-s, s}, {-s,-s,-s}, // left
+	{ s, s, s}, { s, s,-s}, { s,-s,-s}, { s,-s, s}  // right
+};
+
+// текстурные координаты куба
+static const float cubeTexcoords[cubeVerticesCount][2] = {
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // front
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // back
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // top
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // bottom
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}, // left
+	{0.0f,1.0f}, {1.0f,1.0f}, {1.0f,0.0f}, {0.0f,0.0f}  // right
+};
+
+// индексы вершин куба в порядке поротив часовой стрелки
+static const uint32_t cubeIndices[cubeIndicesCount] = {
+	 0, 3, 1,  1, 3, 2, // front
+	 4, 7, 5,  5, 7, 6, // back
+	 8,11, 9,  9,11,10, // top
+	12,15,13, 13,15,14, // bottom
+	16,19,17, 17,19,18, // left
+	20,23,21, 21,23,22  // right
+};
+
+// построение перспективной матрицы
+static void Matrix4Perspective(Matrix4 M, float fovy, float aspect, float znear, float zfar)
 {
-	uint8_t    key;
-	const char *shader;
-	GLuint     program;
-};
+	float f = 1 / tanf(fovy / 2),
+	      A = (zfar + znear) / (znear - zfar),
+	      B = (2 * zfar * znear) / (znear - zfar);
 
-// индекс шейдерной программы
-static GLuint depthProgram = 0, shadowmapProgram = 0, posteffectProgram = 0;
+	M[ 0] = f / aspect; M[ 1] =  0; M[ 2] =  0; M[ 3] =  0;
+	M[ 4] = 0;          M[ 5] =  f; M[ 6] =  0; M[ 7] =  0;
+	M[ 8] = 0;          M[ 9] =  0; M[10] =  A; M[11] =  B;
+	M[12] = 0;          M[13] =  0; M[14] = -1; M[15] =  0;
+}
 
-// индексы текстур
-static GLuint colorTexture = 0, depthTexture = 0, posteffectTexture = 0, posteffectDepthTexture = 0;
+// построение матрицы переноса
+static void Matrix4Translation(Matrix4 M, float x, float y, float z)
+{
+	M[ 0] = 1; M[ 1] = 0; M[ 2] = 0; M[ 3] = x;
+	M[ 4] = 0; M[ 5] = 1; M[ 6] = 0; M[ 7] = y;
+	M[ 8] = 0; M[ 9] = 0; M[10] = 1; M[11] = z;
+	M[12] = 0; M[13] = 0; M[14] = 0; M[15] = 1;
+}
 
-// индекс FBO
-static GLuint depthFBO = 0, posteffectFBO = 0;
+// построение матрицы вращения
+static void Matrix4Rotation(Matrix4 M, float x, float y, float z)
+{
+	const float cx = cosf(x), sx = sinf(x),
+	            cy = cosf(y), sy = sinf(y),
+	            cz = cosf(z), sz = sinf(z);
 
-// положение курсора и его смещение с последнего кадра
-static int cursorPos[2] = {0,0}, rotateDelta[2] = {0,0}, moveDelta[2] = {0,0};
+	// rotationX * rotationY * rotationZ
+	M[ 0] = cy * cz;
+	M[ 1] = -cy * sz;
+	M[ 2] = sy;
+	M[ 3] = 0;
+	M[ 4] = cx * sz + sx * cz * sy;
+	M[ 5] = cx * cz - sx * sy * sz;
+	M[ 6] = -cy * sx;
+	M[ 7] = 0;
+	M[ 8] = sx * sz - cx * cz * sy;
+	M[ 9] = cz * sx + cx * sy * sz;
+	M[10] = cx * cy;
+	M[11] = 0;
+	M[12] = 0;
+	M[13] = 0;
+	M[14] = 0;
+	M[15] = 1;
+}
 
-static const uint32_t meshCount = 3, posteffectsCount = 7;
-
-static Mesh     meshes[meshCount], quadMesh;
-static Material materials[meshCount];
-
-static float3 torusRotation = {0.0f, 0.0f, 0.0f};
-
-static Light  directionalLight;
-static Camera mainCamera, quadCamera, lightCamera;
-
-static Posteffect posteffects[posteffectsCount] = {
-	{VK_F1, "data/normal.fs",     0},
-	{VK_F2, "data/grayscale.fs",  0},
-	{VK_F3, "data/sepia.fs",      0},
-	{VK_F4, "data/inverse.fs",    0},
-	{VK_F5, "data/blur.fs",       0},
-	{VK_F6, "data/emboss.fs",     0},
-	{VK_F7, "data/aberration.fs", 0}
-};
+// перемножение двух матриц
+static void Matrix4Mul(Matrix4 M, Matrix4 A, Matrix4 B)
+{
+	M[ 0] = A[ 0] * B[ 0] + A[ 1] * B[ 4] + A[ 2] * B[ 8] + A[ 3] * B[12];
+	M[ 1] = A[ 0] * B[ 1] + A[ 1] * B[ 5] + A[ 2] * B[ 9] + A[ 3] * B[13];
+	M[ 2] = A[ 0] * B[ 2] + A[ 1] * B[ 6] + A[ 2] * B[10] + A[ 3] * B[14];
+	M[ 3] = A[ 0] * B[ 3] + A[ 1] * B[ 7] + A[ 2] * B[11] + A[ 3] * B[15];
+	M[ 4] = A[ 4] * B[ 0] + A[ 5] * B[ 4] + A[ 6] * B[ 8] + A[ 7] * B[12];
+	M[ 5] = A[ 4] * B[ 1] + A[ 5] * B[ 5] + A[ 6] * B[ 9] + A[ 7] * B[13];
+	M[ 6] = A[ 4] * B[ 2] + A[ 5] * B[ 6] + A[ 6] * B[10] + A[ 7] * B[14];
+	M[ 7] = A[ 4] * B[ 3] + A[ 5] * B[ 7] + A[ 6] * B[11] + A[ 7] * B[15];
+	M[ 8] = A[ 8] * B[ 0] + A[ 9] * B[ 4] + A[10] * B[ 8] + A[11] * B[12];
+	M[ 9] = A[ 8] * B[ 1] + A[ 9] * B[ 5] + A[10] * B[ 9] + A[11] * B[13];
+	M[10] = A[ 8] * B[ 2] + A[ 9] * B[ 6] + A[10] * B[10] + A[11] * B[14];
+	M[11] = A[ 8] * B[ 3] + A[ 9] * B[ 7] + A[10] * B[11] + A[11] * B[15];
+	M[12] = A[12] * B[ 0] + A[13] * B[ 4] + A[14] * B[ 8] + A[15] * B[12];
+	M[13] = A[12] * B[ 1] + A[13] * B[ 5] + A[14] * B[ 9] + A[15] * B[13];
+	M[14] = A[12] * B[ 2] + A[13] * B[ 6] + A[14] * B[10] + A[15] * B[14];
+	M[15] = A[12] * B[ 3] + A[13] * B[ 7] + A[14] * B[11] + A[15] * B[15];
+}
 
 // инициализаця OpenGL
-bool GLWindowInit(const GLWindow &window)
+bool GLWindowInit(const GLWindow *window)
 {
-	// спрячем курсор
-	InputShowCursor(false);
+	ASSERT(window);
 
 	// устанавливаем вьюпорт на все окно
-	glViewport(0, 0, window.width, window.height);
+	glViewport(0, 0, window->width, window->height);
 
 	// параметры OpenGL
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -71,117 +146,95 @@ bool GLWindowInit(const GLWindow &window)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	// создадим и загрузим шейдерные программы
-	if ((depthProgram = LOAD_SHADER("depth")) == 0
-		|| (shadowmapProgram = LOAD_SHADER("shadowmap")) == 0)
-	{
-		return false;
-	}
-
-	for (uint32_t p = 0; p < posteffectsCount; ++p)
-	{
-		posteffects[p].program = ShaderProgramCreateFromFile("data/posteffect.vs", posteffects[p].shader);
-
-		if (posteffects[p].program == 0)
-			return false;
-	}
-
-	posteffectProgram = posteffects[0].program;
-
-	// настроим направленный источник освещения
-	LightDefault(directionalLight, LT_DIRECTIONAL);
-	directionalLight.position.set(3.0f, 3.0f, 3.0f, 0.0f);
-
-	// загрузим текстуры
+	// создадим и загрузим текстуру
 	colorTexture = TextureCreateFromTGA("data/texture.tga");
 
-	// создадим текстуру для хранения глубины
-	depthTexture = TextureCreateDepth(window.width * 2, window.height * 2);
-
-	posteffectTexture = TextureCreateEmpty(GL_RGBA8, GL_RGBA,
-		GL_UNSIGNED_BYTE, window.width, window.height);
-	posteffectDepthTexture = TextureCreateEmpty(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT,
-		GL_UNSIGNED_BYTE, window.width, window.height);
-
-	// создадим примитивы и настроим материалы
-	// плоскость под вращающимся тором
-	MeshCreateQuad(meshes[0], vec3(0.0f, -1.6f, 0.0f), 30.0f);
-	MaterialDefault(materials[0]);
-	materials[0].texture = colorTexture;
-	materials[0].diffuse.set(0.3f, 1.0f, 0.5f, 1.0f);
-
-	// вращающийся тор
-	MeshCreateTorus(meshes[1], vec3(0.0f, 1.2f, 0.0f), 2.0f);
-	MaterialDefault(materials[1]);
-	materials[1].texture = colorTexture;
-	materials[1].diffuse.set(0.3f, 0.5f, 1.0f, 1.0f);
-	materials[1].specular.set(0.8f, 0.8f, 0.8f, 1.0f);
-	materials[1].shininess = 20.0f;
-
-	// вращающийся тор
-	MeshCreateTorus(meshes[2], vec3(0.0f, 1.2f, 0.0f), 1.0f);
-	MaterialDefault(materials[2]);
-	materials[2].texture = colorTexture;
-	materials[2].diffuse.set(1.0f, 0.5f, 0.3f, 1.0f);
-	materials[2].specular.set(0.8f, 0.8f, 0.8f, 1.0f);
-	materials[2].shininess = 20.0f;
-
-	// настроим полноэкранный прямоугольник
-	MeshCreateQuad(quadMesh, vec3(0.0f, 0.0f, 0.0f), 1.0f);
-	quadMesh.rotation = mat3(GLRotationX(90.0f));
-
-	// создадим и настроим камеру
-	const float aspectRatio = (float)window.width / (float)window.height;
-	CameraLookAt(mainCamera, vec3(-5.0f, 10.0f, 10.0f), vec3_zero, vec3_y);
-	CameraPerspective(mainCamera, 45.0f, aspectRatio, 0.5f, 100.0f);
-
-	// камера источника света
-	CameraLookAt(lightCamera, directionalLight.position, -directionalLight.position, vec3_y);
-	CameraOrtho(lightCamera, -5.0f, 5.0f, -5.0f, 5.0f, -10.0f, 10.0f);
-
-	// камера полноэкранного прямоугольника, для рендера текстуры глубины
-	CameraLookAt(quadCamera, vec3_zero, -vec3_z, vec3_y);
-	CameraOrtho(quadCamera, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-
-	GLenum fboStatus;
-
-	// создаем FBO для рендера глубины в текстуру
-	glGenFramebuffers(1, &depthFBO);
-	// делаем созданный FBO текущим
-	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-
-	// отключаем вывод цвета в текущий FBO
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-
-	// указываем для текущего FBO текстуру, куда следует производить рендер глубины
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
-
-	// проверим текущий FBO на корректность
-	if ((fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		LOG_ERROR("glCheckFramebufferStatus error 0x%X\n", fboStatus);
+	if (!colorTexture)
 		return false;
+
+	// делаем активным текстурный юнит 0 и назначаем на него текстуру
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, colorTexture);
+
+	// создадим и загрузим шейдерную программу
+	shaderProgram = ShaderProgramCreateFromFile("data/lesson", ST_VERTEX | ST_FRAGMENT);
+
+	if (!shaderProgram)
+		return false;
+
+	// собираем созданную и загруженную шейдерную программу
+	if (!ShaderProgramLink(shaderProgram))
+		return false;
+
+	// сделаем шейдерную программу активной
+	ShaderProgramBind(shaderProgram);
+
+	// создадим перспективную матрицу
+	const float aspectRatio = (float)window->width / (float)window->height;
+	Matrix4Perspective(projectionMatrix, 45.0f, aspectRatio, 1.0f, 10.0f);
+
+	// с помощью видовой матрицы отодвинем сцену назад
+	Matrix4Translation(viewMatrix, 0.0f, 0.0f, -4.0f);
+
+	Matrix4Mul(viewProjectionMatrix, projectionMatrix, viewMatrix);
+
+	// получим индекс матрицы из шейдерной программы
+	modelViewProjectionMatrixLocation = glGetUniformLocation(shaderProgram, "modelViewProjectionMatrix");
+
+	// получим индекс текстурного самплера из шейдерной программы и свяжем его с текстурным юнитом 0
+	if ((colorTextureLocation = glGetUniformLocation(shaderProgram, "colorTexture")) != -1)
+		glUniform1i(colorTextureLocation, 0);
+
+	// проверка шейдерной программы на корректность
+	if (!ShaderProgramValidate(shaderProgram))
+		return false;
+
+	// запросим у OpenGL свободный индекс VAO
+	glGenVertexArrays(1, &cubeVAO);
+
+	// сделаем VAO активным
+	glBindVertexArray(cubeVAO);
+
+	// создадим 3 VBO для данных куба - координаты вершин, текстурные координат и индексный буфер
+	glGenBuffers(3, cubeVBO);
+
+	// получим индекс вершинного атрибута 'position' из шейдерной программы
+	positionLocation = glGetAttribLocation(shaderProgram, "position");
+	if (positionLocation != -1)
+	{
+		// начинаем работу с буфером для координат вершин куба
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO[0]);
+		// поместим в буфер координаты вершин куба
+		glBufferData(GL_ARRAY_BUFFER, cubeVerticesCount * (3 * sizeof(float)),
+			cubePositions, GL_STATIC_DRAW);
+
+		// укажем параметры вершинного атрибута для текущего активного VBO
+		glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+		// разрешим использование вершинного атрибута
+		glEnableVertexAttribArray(positionLocation);
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// создаем FBO для рендера глубины в текстуру
-	glGenFramebuffers(1, &posteffectFBO);
-	// делаем созданный FBO текущим
-	glBindFramebuffer(GL_FRAMEBUFFER, posteffectFBO);
-
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, posteffectTexture,      0);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  posteffectDepthTexture, 0);
-
-	// проверим текущий FBO на корректность
-	if ((fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE)
+	// получим индекс вершинного атрибута 'texcoord' из шейдерной программы
+	texcoordLocation = glGetAttribLocation(shaderProgram, "texcoord");
+	if (texcoordLocation != -1)
 	{
-		LOG_ERROR("glCheckFramebufferStatus error 0x%X\n", fboStatus);
-		return false;
+		// начинаем работу с буфером для текстурных координат куба
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO[1]);
+		// поместим в буфер текстурные координаты куба
+		glBufferData(GL_ARRAY_BUFFER, cubeVerticesCount * (2 * sizeof(float)),
+			cubeTexcoords, GL_STATIC_DRAW);
+
+		// укажем параметры вершинного атрибута для текущего активного VBO
+		glVertexAttribPointer(texcoordLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+		// разрешим использование вершинного атрибута
+		glEnableVertexAttribArray(texcoordLocation);
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// начинаем работу с индексным буфером
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeVBO[2]);
+	// поместим в буфер индексы вершин куба
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cubeIndicesCount * sizeof(uint32_t),
+		cubeIndices, GL_STATIC_DRAW);
 
 	// проверим не было ли ошибок
 	OPENGL_CHECK_FOR_ERRORS();
@@ -190,160 +243,96 @@ bool GLWindowInit(const GLWindow &window)
 }
 
 // очистка OpenGL
-void GLWindowClear(const GLWindow &window)
+void GLWindowClear(const GLWindow *window)
 {
-	(void)window;
+	ASSERT(window);
 
-	for (uint32_t i = 0; i < meshCount; ++i)
-		MeshDestroy(meshes[i]);
+	// делаем текущие VBO неактивными
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// удаляем VBO
+	glDeleteBuffers(3, cubeVBO);
 
-	ShaderProgramDestroy(depthProgram);
-	ShaderProgramDestroy(shadowmapProgram);
+	// далаем текущий VAO неактивным
+	glBindVertexArray(0);
+	// удаляем VAO
+	glDeleteVertexArrays(1, &cubeVAO);
 
-	for (uint32_t p = 0; p < posteffectsCount; ++p)
-		if (posteffects[p].program)
-			ShaderProgramDestroy(posteffects[p].program);
+	// удаляем шейдерную программу
+	ShaderProgramDestroy(shaderProgram);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glDeleteFramebuffers(1, &depthFBO);
-	glDeleteFramebuffers(1, &posteffectFBO);
-
+	// удаляем текстуру
 	TextureDestroy(colorTexture);
-	TextureDestroy(depthTexture);
-	TextureDestroy(posteffectTexture);
-	TextureDestroy(posteffectDepthTexture);
-
-	InputShowCursor(true);
-}
-
-void RenderScene(GLuint program, const Camera &camera)
-{
-	// делаем шейдерную программу активной
-	ShaderProgramBind(program);
-
-	LightSetup(program, directionalLight);
-	CameraSetupLightMatrix(program, lightCamera);
-
-	TextureSetup(program, 1, "depthTexture", depthTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-
-	for (uint32_t i = 0; i < meshCount; ++i)
-	{
-		CameraSetup(program, camera, MeshGetModelMatrix(meshes[i]));
-		MaterialSetup(program, materials[i]);
-		MeshRender(meshes[i]);
-	}
-}
-
-void RenderQuad(GLuint program, const Camera &camera)
-{
-	// делаем шейдерную программу активной
-	ShaderProgramBind(program);
-
-	TextureSetup(program, 0, "colorTexture", posteffectTexture);
-	TextureSetup(program, 2, "depthTexture", posteffectDepthTexture);
-
-	CameraSetup(program, camera, MeshGetModelMatrix(quadMesh));
-	MeshRender(quadMesh);
 }
 
 // функция рендера
-void GLWindowRender(const GLWindow &window)
+void GLWindowRender(const GLWindow *window)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-	glViewport(0, 0, window.width * 2, window.height * 2);
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glDepthMask(GL_TRUE);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glCullFace(GL_FRONT);
+	ASSERT(window);
 
-	RenderScene(depthProgram, lightCamera);
-
-	glViewport(0, 0, window.width, window.height);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glCullFace(GL_BACK);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, posteffectFBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	RenderScene(shadowmapProgram, mainCamera);
+	// делаем шейдерную программу активной
+	ShaderProgramBind(shaderProgram);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// передаем в шейдер матрицу преобразования координат вершин
+	if (modelViewProjectionMatrixLocation != -1)
+		glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_TRUE, modelViewProjectionMatrix);
 
-	RenderQuad(posteffectProgram, quadCamera);
+	// выводим на экран все что относится к VAO
+	glBindVertexArray(cubeVAO);
+	glDrawElements(GL_TRIANGLES, cubeIndicesCount, GL_UNSIGNED_INT, NULL);
 
 	// проверка на ошибки
 	OPENGL_CHECK_FOR_ERRORS();
 }
 
 // функция обновления
-void GLWindowUpdate(const GLWindow &window, double deltaTime)
+void GLWindowUpdate(const GLWindow *window, double deltaTime)
 {
+	ASSERT(window);
 	ASSERT(deltaTime >= 0.0); // проверка на возможность бага
 
-	(void)window;
+	// матрица вращения куба
+	Matrix4 modelMatrix;
 
 	// зададим углы поворота куба с учетом времени
-	if ((torusRotation[0] += 30.0f * (float)deltaTime) > 360.0f)
-		torusRotation[0] -= 360.0f;
+	if ((cubeRotation[0] += 0.3f * (float)deltaTime) > 360.0f)
+		cubeRotation[0] -= 360.0f;
 
-	if ((torusRotation[1] += 15.0f * (float)deltaTime) > 360.0f)
-		torusRotation[1] -= 360.0f;
+	if ((cubeRotation[1] += 1.5f * (float)deltaTime) > 360.0f)
+		cubeRotation[1] -= 360.0f;
 
-	if ((torusRotation[2] += 7.0f * (float)deltaTime) > 360.0f)
-		torusRotation[2] -= 360.0f;
+	if ((cubeRotation[2] += 0.7f * (float)deltaTime) > 360.0f)
+		cubeRotation[2] -= 360.0f;
 
-	// зададим матрицу вращения куба
-	meshes[1].rotation = GLFromEuler(torusRotation[0], torusRotation[1], torusRotation[2]);
-	meshes[2].rotation = GLFromEuler(-torusRotation[0], torusRotation[1], -torusRotation[2]);
-
-	// вращаем камеру
-	CameraRotate(mainCamera, (float)deltaTime * rotateDelta[1], (float)deltaTime * rotateDelta[0], 0.0f);
-	// двигаем камеру
-	CameraMove(mainCamera, (float)deltaTime * moveDelta[0], 0.0f, (float)deltaTime * moveDelta[1]);
-
-	rotateDelta[0] = rotateDelta[1] = 0;
-	moveDelta[0] = moveDelta[1] = 0;
-
-	OPENGL_CHECK_FOR_ERRORS();
+	// рассчитаем матрицу преобразования координат вершин куба
+	Matrix4Rotation(modelMatrix, cubeRotation[0], cubeRotation[1], cubeRotation[2]);
+	Matrix4Mul(modelViewProjectionMatrix, viewProjectionMatrix, modelMatrix);
 }
 
 // функция обработки ввода с клавиатуры и мыши
-void GLWindowInput(const GLWindow &window)
+void GLWindowInput(const GLWindow *window)
 {
-	// центр окна
-	int32_t xCenter = window.width / 2, yCenter = window.height / 2;
+	ASSERT(window);
 
 	// выход из приложения по кнопке Esc
 	if (InputIsKeyPressed(VK_ESCAPE))
 		GLWindowDestroy();
 
-	for (uint32_t p = 0; p < posteffectsCount; ++p)
-		if (InputIsKeyPressed(posteffects[p].key))
-			posteffectProgram = posteffects[p].program;
-
 	// переключение между оконным и полноэкранным режимом
 	// осуществляется по нажатию комбинации Alt+Enter
 	if (InputIsKeyDown(VK_MENU) && InputIsKeyPressed(VK_RETURN))
-		GLWindowSetSize(window.width, window.height, !window.fullScreen);
-
-	moveDelta[0] = 10 * ((int)InputIsKeyDown('D') - (int)InputIsKeyDown('A'));
-	moveDelta[1] = 10 * ((int)InputIsKeyDown('S') - (int)InputIsKeyDown('W'));
-
-	InputGetCursorPos(cursorPos, cursorPos + 1);
-	rotateDelta[0] += cursorPos[0] - xCenter;
-	rotateDelta[1] += cursorPos[1] - yCenter;
-	InputSetCursorPos(xCenter, yCenter);
+		GLWindowSetSize(window->width, window->height, !window->fullScreen);
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	int result;
 
-	LoggerCreate("lesson07.log");
+	LoggerCreate("lesson03.log");
 
-	if (!GLWindowCreate("lesson07", 800, 600, false))
+	if (!GLWindowCreate("lesson03", 800, 600, false))
 		return 1;
 
 	result = GLWindowMainLoop();
