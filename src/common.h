@@ -18,6 +18,8 @@
 #define TEXTURE_COLOR  0
 #define TEXTURE_DEPTH  1
 
+#define GL_OFFSET(x) ((const GLvoid*)(x))
+
 typedef float float2[2];
 typedef float float3[3];
 typedef float float4[4];

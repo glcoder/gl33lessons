@@ -12,9 +12,9 @@ layout(location = FRAG_OUTPUT0) out vec4 color;
 #define KERNEL_SIZE 9
 
 const float kernel[KERNEL_SIZE] = float[](
-	0.0625, 0.125, 0.0625,
-	0.1250, 0.250, 0.1250,
-	0.0625, 0.125, 0.0625
+	0.0625, 0.1250, 0.0625,
+	0.1250, 0.2500, 0.1250,
+	0.0625, 0.1250, 0.0625
 );
 
 const vec2 offset[KERNEL_SIZE] = vec2[](

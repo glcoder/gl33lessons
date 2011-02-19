@@ -69,7 +69,7 @@ GLuint TextureCreateFromTGA(const char *fileName)
 
 	// загрузим данные о цвете в текущую автивную текстуру
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, header->width, header->height, 0, format,
-		GL_UNSIGNED_BYTE, (const GLvoid*)(buffer + sizeof(TGAHeader) + header->idlength));
+		GL_UNSIGNED_BYTE, GL_OFFSET(buffer + sizeof(TGAHeader) + header->idlength));
 
 	// после загрузки в текстуру данные о цвете в памяти нам больше не нужны
 	delete[] buffer;
