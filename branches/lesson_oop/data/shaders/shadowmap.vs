@@ -33,11 +33,12 @@ out Vertex
 void main(void)
 {
 	vec4 vertexpos  = camera.model * vec4(position, 1.0);
-	mat3 tbn        = transpose(mat3(tangent, binormal, normal));
+	mat3 tbn        = mat3(tangent, binormal, normal);
 	vertex.smcoord  = camera.light * vertexpos;
 	vertex.texcoord = texcoord;
 	vertex.normal   = camera.normal * normal;
-	vertex.lightDir = normalize(tbn * transpose(camera.normal) * light.position.xyz);
+	// if we switch multiply order we don't need to transpose matricies
+	vertex.lightDir = normalize(light.position.xyz * camera.normal * tbn);
 	vertex.viewDir  = camera.position - vertexpos.xyz;
 	gl_Position     = camera.viewProjection * vertexpos;
 }

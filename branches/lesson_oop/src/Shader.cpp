@@ -14,7 +14,8 @@ static const GLchar vertexShaderDefines[] =
 
 static const GLchar fragmentShaderDefines[] =
 	"#version 330 core\n\n"
-	DEFINE_TO_STR(FRAG_OUTPUT0)
+	DEFINE_TO_STR(FRAG_COLOR)
+	DEFINE_TO_STR(FRAG_NORMAL)
 	"\n";
 
 Shader::Shader():

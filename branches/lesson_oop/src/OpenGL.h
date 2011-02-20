@@ -16,7 +16,8 @@
 #define VERT_TANGENT   3
 #define VERT_BINORMAL  4
 
-#define FRAG_OUTPUT0   0
+#define FRAG_COLOR   0
+#define FRAG_NORMAL  1
 
 #define GL_PVOID(x) ((const GLvoid *)(x))
 
@@ -43,6 +44,7 @@ namespace GL
 	void information();
 }
 
+extern PFNGLDRAWBUFFERSPROC              glDrawBuffers;
 extern PFNGLACTIVETEXTUREPROC            glActiveTexture;
 extern PFNGLGENERATEMIPMAPPROC           glGenerateMipmap;
 extern PFNGLTEXIMAGE2DMULTISAMPLEPROC    glTexImage2DMultisample;
