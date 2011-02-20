@@ -27,6 +27,7 @@ public:
 		GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) const;
 
 	void setDrawBuffer(GLenum mode) const;
+	void setDrawBuffers(GLsizei count, GLenum *modes) const;
 	void setReadBuffer(GLenum mode) const;
 
 protected:

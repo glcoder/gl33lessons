@@ -68,6 +68,12 @@ void Framebuffer::setDrawBuffer(GLenum mode) const
 	glDrawBuffer(mode);
 }
 
+void Framebuffer::setDrawBuffers(GLsizei count, GLenum *modes) const
+{
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_handle);
+	glDrawBuffers(count, modes);
+}
+
 void Framebuffer::setReadBuffer(GLenum mode) const
 {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_handle);
