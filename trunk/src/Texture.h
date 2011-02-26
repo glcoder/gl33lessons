@@ -2,24 +2,40 @@
 #define TEXTURE_H
 
 #include "common.h"
+#include "VFS.h"
 #include "OpenGL.h"
+#include "Shader.h"
 
-// создает текстуру из TGA-файла с изображением
-GLuint TextureCreateFromTGA(const char *fileName);
+class Texture
+{
+public:
+	Texture();
+	~Texture();
 
-// создание "пустой текстуры"
-GLuint TextureCreateEmpty(GLint internalFormat, GLenum format, GLenum type, GLsizei width, GLsizei height);
+	void create(GLint minFilter = GL_LINEAR, GLint magFilter = GL_LINEAR,
+		GLint warp = GL_CLAMP_TO_EDGE, GLenum target = GL_TEXTURE_2D);
 
-// создание "пустой" текстуры для хранения depth-данных
-GLuint TextureCreateDepth(GLsizei width, GLsizei height);
+	void destroy();
 
-// создание фейковой текстуры залитой белым цветом
-GLuint TextureCreateFake();
+	GLuint getHandle() const;
 
-// удаляет текстуру
-void TextureDestroy(GLuint texture);
+	void image2D(const GLvoid *data, GLsizei width, GLsizei height,
+		GLint internalFormat, GLenum format, GLenum type, bool genMIPs = false);
 
-// установка текстуры в текстурный юнит и шейдер
-void TextureSetup(GLuint program, GLint unit, const GLchar *name, GLuint texture);
+	void image2DMultisample(GLsizei width, GLsizei height, GLint internalFormat,
+		GLsizei samples, GLboolean fixedSampleLocations = GL_FALSE);
+
+	void bind(GLint unit = 0, bool compareToRef = false) const;
+
+	void setup(const ShaderProgram &program, const char *name,
+		GLint unit = 0, bool compareToRef = false) const;
+
+	bool load2DTGA(const char *name, bool genMIPs = false);
+	bool load2DPNG(const char *name, bool genMIPs = false);
+
+protected:
+	GLuint m_handle;
+	GLenum m_target;
+};
 
 #endif /* TEXTURE_H */

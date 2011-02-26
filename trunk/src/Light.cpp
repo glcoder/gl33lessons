@@ -1,29 +1,80 @@
 #include "Light.h"
 
-void LightDefault(Light &light, LightType type)
+Light::Light(LightType type)
 {
-	light.type = type;
+	m_type = type;
 
-	light.ambient.set(0.0f, 0.0f, 0.0f, 1.0f);
-	light.diffuse.set(1.0f, 1.0f, 1.0f, 1.0f);
-	light.specular.set(1.0f, 1.0f, 1.0f, 1.0f);
-	light.position.set(0.0f, 0.0f, 1.0f, 0.0f);
-	light.attenuation.set(1.0f, 0.0f, 0.0f);
-	light.spotDirection.set(0.0f, 0.0f, -1.0f);
-	light.spotExponent = 0.0f;
-	light.spotCosCutoff = -1.0f; // cos 180 градусов == -1
+	float4_set(m_ambient, 0.0f, 0.0f, 0.0f, 1.0f);
+	float4_set(m_diffuse, 1.0f, 1.0f, 1.0f, 1.0f);
+	float4_set(m_specular, 1.0f, 1.0f, 1.0f, 1.0f);
+	float4_set(m_position, 0.0f, 0.0f, 1.0f, 0.0f);
+	float3_set(m_attenuation, 1.0f, 0.0f, 0.0f);
+	float3_set(m_spotDirection, 0.0f, 0.0f, -1.0f);
+	m_spotExponent  = 0.0f;
+	m_spotCosCutoff = -1.0f;
 }
 
-void LightSetup(GLuint program, const Light &light)
+Light::~Light()
 {
-	glUniform4fv(glGetUniformLocation(program, "light.ambient"), 1, light.ambient.v);
-	glUniform4fv(glGetUniformLocation(program, "light.diffuse"), 1, light.diffuse.v);
-	glUniform4fv(glGetUniformLocation(program, "light.specular"), 1, light.specular.v);
-	glUniform4fv(glGetUniformLocation(program, "light.position"), 1, light.position.v);
+}
 
-	glUniform3fv(glGetUniformLocation(program, "light.attenuation"), 1, light.attenuation.v);
-	glUniform3fv(glGetUniformLocation(program, "light.spotDirection"), 1, light.spotDirection.v);
+void Light::setType(LightType type)
+{
+	m_type = type;
+}
 
-	glUniform1fv(glGetUniformLocation(program, "light.spotExponent"), 1, &light.spotExponent);
-	glUniform1fv(glGetUniformLocation(program, "light.spotCosCutoff"), 1, &light.spotCosCutoff);
+void Light::setAmbient(float x, float y, float z, float w)
+{
+	float4_set(m_ambient, x, y, z, w);
+}
+
+void Light::setDiffuse(float x, float y, float z, float w)
+{
+	float4_set(m_diffuse, x, y, z, w);
+}
+
+void Light::setSpecular(float x, float y, float z, float w)
+{
+	float4_set(m_specular, x, y, z, w);
+}
+
+void Light::setPosition(float x, float y, float z, float w)
+{
+	float4_set(m_position, x, y, z, w);
+}
+
+void Light::setAttenuation(float x, float y, float z)
+{
+	float3_set(m_attenuation, x, y, z);
+}
+
+void Light::setSpotDirection(float x, float y, float z)
+{
+	float3_set(m_spotDirection, x, y, z);
+}
+
+void Light::setSpotExponent(float x)
+{
+	m_spotExponent = x;
+}
+
+void Light::setSpotCosCutoff(float x)
+{
+	m_spotCosCutoff = x;
+}
+
+void Light::setup(const ShaderProgram &program) const
+{
+	const GLuint handle = program.getHandle();
+
+	glUniform4fv(glGetUniformLocation(handle, "light.ambient"), 1, m_ambient);
+	glUniform4fv(glGetUniformLocation(handle, "light.diffuse"), 1, m_diffuse);
+	glUniform4fv(glGetUniformLocation(handle, "light.specular"), 1, m_specular);
+	glUniform4fv(glGetUniformLocation(handle, "light.position"), 1, m_position);
+
+	glUniform3fv(glGetUniformLocation(handle, "light.attenuation"), 1, m_attenuation);
+	glUniform3fv(glGetUniformLocation(handle, "light.spotDirection"), 1, m_spotDirection);
+
+	glUniform1fv(glGetUniformLocation(handle, "light.spotExponent"), 1, &m_spotExponent);
+	glUniform1fv(glGetUniformLocation(handle, "light.spotCosCutoff"), 1, &m_spotCosCutoff);
 }

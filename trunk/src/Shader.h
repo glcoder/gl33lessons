@@ -2,27 +2,56 @@
 #define SHADER_H
 
 #include "common.h"
+#include "VFS.h"
 #include "OpenGL.h"
-#include "Light.h"
-#include "Material.h"
-#include "Camera.h"
 
-// создает шейдерную программу, загружает шейдеры из файлов и собирает шейдерную программу
-GLuint ShaderProgramCreateFromFile(const char *vsName, const char *fsName);
+class Shader
+{
+public:
+	Shader();
+	~Shader();
 
-// делает указанную шейдерную программу неактивной и удаляет ее
-void ShaderProgramDestroy(GLuint program);
+	void create(GLenum type);
+	void destroy();
 
-// собирает созданную и загруженную шейдерную программу
-bool ShaderProgramLink(GLuint program);
+	bool load(GLenum type, const char *name);
 
-// проверяет собранную шейдерную программу на корректность
-bool ShaderProgramValidate(GLuint program);
+	void source(const GLchar *data, GLint length) const;
+	bool compile() const;
 
-// делает указанную шейдерную программу активной
-void ShaderProgramBind(GLuint program);
+	GLuint getHandle() const;
+	GLenum getType() const;
 
-// делает текущую шейдерную программу неактивной
-void ShaderProgramUnbind();
+protected:
+	GLint getStatus(GLenum param) const;
+
+	GLuint m_handle;
+	GLenum m_type;
+};
+
+
+class ShaderProgram
+{
+public:
+	ShaderProgram();
+	~ShaderProgram();
+
+	void create();
+	void destroy();
+
+	void attach(const Shader &shader) const;
+
+	bool link() const;
+	bool validate() const;
+
+	void bind() const;
+
+	GLuint getHandle() const;
+
+protected:
+	GLint getStatus(GLenum param) const;
+
+	GLuint m_handle;
+};
 
 #endif /* SHADER_H */

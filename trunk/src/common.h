@@ -1,6 +1,13 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#define _WIN32_WINNT        0x0501 // XP minimum
+#include <windows.h>
+#include <mmsystem.h>
+#endif
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
@@ -9,14 +16,7 @@
 #include <cmath>
 #include <ctime>
 
-#define VERT_POSITION  0
-#define VERT_TEXCOORD  1
-#define VERT_NORMAL    2
-
-#define FRAG_OUTPUT0   0
-
-#define TEXTURE_COLOR  0
-#define TEXTURE_DEPTH  1
+#define ARRAYSIZE(a) (sizeof(a)/sizeof(*(a)))
 
 typedef float float2[2];
 typedef float float3[3];
@@ -30,19 +30,53 @@ typedef unsigned __int16 uint16_t;
 typedef __int32          int32_t;
 typedef unsigned __int32 uint32_t;
 
-// кажется MSVC не знает про snprintf, но там есть _snprintf
 #define snprintf _snprintf
-
-#elif defined(__MINGW32__)
-#include <stdint.h>
-
 #else
-#error You must compile this code with MSVC or MinGW!
+#include <stdint.h>
 #endif
 
-#include "Logger.h"
+#include "Log.h"
 
-// загрузка файла целиком в память
-bool LoadFile(const char *fileName, bool binary, uint8_t **buffer, uint32_t *size);
+inline void float2_set(float2 var, float x, float y)
+{
+	var[0] = x;
+	var[1] = y;
+}
+
+inline void float3_set(float3 var, float x, float y, float z)
+{
+	var[0] = x;
+	var[1] = y;
+	var[2] = z;
+}
+
+inline void float4_set(float3 var, float x, float y, float z, float w)
+{
+	var[0] = x;
+	var[1] = y;
+	var[2] = z;
+	var[3] = w;
+}
+
+inline void float2_copy(float2 dst, float2 src)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+}
+
+inline void float3_copy(float3 dst, float3 src)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+}
+
+inline void float4_copy(float4 dst, float4 src)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+	dst[3] = src[3];
+}
 
 #endif /* COMMON_H */

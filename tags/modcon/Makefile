@@ -1,20 +1,20 @@
-CPPFLAGS := -pedantic -std=c99 -Wall -Wextra -O3 -Iinclude
-LDFLAGS  := 
+CPPFLAGS := -std=c++0x -pedantic -Wall -Wextra -O3
+LDFLAGS  := -static-libgcc -static-libstdc++
 
 BUILD_DIR  := build
 SOURCE_DIR := src
 
-OBJ := $(BUILD_DIR)/crc32.o $(BUILD_DIR)/main.o
+OBJ := $(BUILD_DIR)/crc32.o $(BUILD_DIR)/objcon.o $(BUILD_DIR)/main.o
 
-BIN := modcon.exe
+BIN := objcon.exe
 
-$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
-	gcc -c $(CPPFLAGS) $< -o $@
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
+	g++ -c $(CPPFLAGS) $< -o $@
 
 all: $(BIN)
 
 $(BIN): $(OBJ)
-	gcc -o $(BIN) $(OBJ) $(LDFLAGS)
+	g++ -o $(BIN) $(LDFLAGS) $(OBJ)
 
 clean:
 	rm -f $(OBJ) $(BIN)
