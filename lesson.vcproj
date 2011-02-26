@@ -70,7 +70,7 @@
 				Name="VCLinkerTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalDependencies="opengl32.lib"
-				OutputFile="lesson07.exe"
+				OutputFile="lesson08.exe"
 				LinkIncremental="1"
 				GenerateManifest="false"
 				ManifestFile="build\lesson.manifest"
@@ -116,90 +116,21 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath=".\src\common.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\common.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\GLWindow.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\GLWindow.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Logger.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Logger.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\main.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\OpenGL.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\OpenGL.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Shader.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Shader.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Texture.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Texture.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Mesh.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Mesh.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Camera.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Camera.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Light.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Light.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Material.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Material.h"
-				>
-			</File>
+			<File RelativePath="src\Log.cpp"></File>
+			<File RelativePath="src\VFS.cpp"></File>
+			<File RelativePath="src\OpenGL.cpp"></File>
+			<File RelativePath="src\OpenGL_Win32.cpp"></File>
+			<File RelativePath="src\Texture.cpp"></File>
+			<File RelativePath="src\Framebuffer.cpp"></File>
+			<File RelativePath="src\Shader.cpp"></File>
+			<File RelativePath="src\Light.cpp"></File>
+			<File RelativePath="src\Material.cpp"></File>
+			<File RelativePath="src\Mesh.cpp"></File>
+			<File RelativePath="src\RenderObject.cpp"></File>
+			<File RelativePath="src\Camera.cpp"></File>
+			<File RelativePath="src\Timer_Win32.cpp"></File>
+			<File RelativePath="src\Window_Win32.cpp"></File>
+			<File RelativePath="src\main.cpp"></File>
 		</Filter>
 		<Filter
 			Name="Header Files"

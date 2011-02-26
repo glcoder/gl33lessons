@@ -2,26 +2,39 @@
 #define LIGHT_H
 
 #include "common.h"
-#include "math/math3d.h"
 #include "OpenGL.h"
+#include "Shader.h"
 
-enum LightType { LT_POINT = 0, LT_DIRECTIONAL, LT_SPOT };
+enum LightType { LIGHT_POINT = 0, LIGHT_DIRECTIONAL, LIGHT_SPOT };
 
-struct Light
+class Light
 {
-	LightType type;
+public:
+	Light(LightType type = LIGHT_POINT);
+	~Light();
 
-	vec4  ambient;
-	vec4  diffuse;
-	vec4  specular;
-	vec4  position;
-	vec3  attenuation;
-	vec3  spotDirection;
-	float spotExponent;
-	float spotCosCutoff;
+	void setType(LightType type);
+	void setAmbient(float x, float y, float z, float w);
+	void setDiffuse(float x, float y, float z, float w);
+	void setSpecular(float x, float y, float z, float w);
+	void setPosition(float x, float y, float z, float w);
+	void setAttenuation(float x, float y, float z);
+	void setSpotDirection(float x, float y, float z);
+	void setSpotExponent(float x);
+	void setSpotCosCutoff(float x);
+
+	void setup(const ShaderProgram &program) const;
+
+protected:
+	LightType m_type;
+	float4    m_ambient;
+	float4    m_diffuse;
+	float4    m_specular;
+	float4    m_position;
+	float3    m_attenuation;
+	float3    m_spotDirection;
+	float     m_spotExponent;
+	float     m_spotCosCutoff;
 };
-
-void LightDefault(Light &light, LightType type);
-void LightSetup(GLuint program, const Light &light);
 
 #endif /* LIGHT_H */
