@@ -330,7 +330,8 @@ if (colorLocation != -1)
 // построение перспективной матрицы проекции
 void Matrix4Perspective(float *M, float fovy, float aspect, float znear, float zfar)
 {
-	float f = 1 / tanf(fovy / 2),
+	// fovy передается в градусах - сконвертируем его в радианы
+	float f = 1 / tanf(fovy * M_PI / 360),
 	      A = (zfar + znear) / (znear - zfar),
 	      B = (2 * zfar * znear) / (znear - zfar);
 
