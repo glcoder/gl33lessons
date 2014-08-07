@@ -3,7 +3,7 @@
 
 = Урок 2 - Рисуем первый треугольник =
 
-http://img266.imageshack.us/img266/1935/200413.jpg
+http://i.imgur.com/hJdEcPIl.png
 
 == Введение ==
 
