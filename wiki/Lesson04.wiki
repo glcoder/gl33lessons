@@ -3,7 +3,7 @@
 
 = Урок 4 - Свет, камера, материал! Часть 1 =
 
-http://img697.imageshack.us/img697/9640/200521.jpg
+http://i.imgur.com/voKQYtQl.png
 
 == Введение ==
 
@@ -33,7 +33,7 @@ http://img697.imageshack.us/img697/9640/200521.jpg
 
 Точечный источник испускает лучи света во все стороны, наглядно это можно представить следующим рисунком:
 
-http://img201.imageshack.us/img201/6086/pointlight.png
+http://i.imgur.com/rjynF8x.png
 
 {{{
 // Точечный источник освещения
