@@ -3,7 +3,7 @@
 
 = Урок 3 - Вращающийся куб с текстурой =
 
-http://img837.imageshack.us/img837/1614/200420.jpg
+http://i.imgur.com/rGatTpUl.png
 
 == Введение ==
 
