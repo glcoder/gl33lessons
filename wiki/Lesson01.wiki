@@ -3,7 +3,7 @@
 
 = Урок 1 - Создание контекста OpenGL 3.3 =
 
-http://img41.imageshack.us/img41/1452/200403.jpg
+http://i.imgur.com/lDHyLPpl.png
 
 == Введение ==
 
