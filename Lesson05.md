@@ -196,5 +196,5 @@ for (uint32_t i = 0; i < meshCount; ++i)
 ## Исходный код и программа ##
 
 Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
-  * Используя SVN [lesson05](http://code.google.com/p/gl33lessons/source/browse/#svn/tags/lesson05)
-  * Скачав архив (включает программу) [lesson05.zip](http://code.google.com/p/gl33lessons/downloads/detail?name=lesson05.zip)
+  * Используя SVN [lesson05](https://github.com/glcoder/gl33lessons/tree/lesson05)
+  * Скачав архив [lesson05.zip](https://github.com/glcoder/gl33lessons/archive/lesson05.zip) [lesson05.tar.gz](https://github.com/glcoder/gl33lessons/archive/lesson05.tar.gz)
