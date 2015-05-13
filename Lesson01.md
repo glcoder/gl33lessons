@@ -160,5 +160,5 @@ if (!hRC || !wglMakeCurrent(hDC, hRC))
 ## Исходный код ##
 
 Доступ к исходному коду с проектом для MSVC можно получить двумя способами:
-  * Используя SVN [lesson01](http://code.google.com/p/gl33lessons/source/browse/#svn/tags/lesson01)
-  * Скачав архив [lesson01.zip](http://code.google.com/p/gl33lessons/downloads/detail?name=lesson01.zip)
+  * Используя SVN [lesson01](https://github.com/glcoder/gl33lessons/tree/lesson01)
+  * Скачав архив [lesson01.zip](https://github.com/glcoder/gl33lessons/archive/lesson01.zip) [lesson01.tar.gz](https://github.com/glcoder/gl33lessons/archive/lesson01.tar.gz)
