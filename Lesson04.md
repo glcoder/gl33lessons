@@ -321,5 +321,5 @@ void main(void)
 ## Исходный код ##
 
 Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
-  * Используя SVN [lesson04](http://code.google.com/p/gl33lessons/source/browse/#svn/tags/lesson04)
-  * Скачав архив [lesson04.zip](http://code.google.com/p/gl33lessons/downloads/detail?name=lesson04.zip)
+  * Используя SVN [lesson04](https://github.com/glcoder/gl33lessons/tree/lesson04)
+  * Скачав архив [lesson04.zip](https://github.com/glcoder/gl33lessons/archive/lesson04.zip) [lesson04.tar.gz](https://github.com/glcoder/gl33lessons/archive/lesson04.tar.gz)
