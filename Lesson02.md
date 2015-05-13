@@ -401,5 +401,5 @@ glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 ## Исходный код ##
 
 Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
-  * Используя SVN [lesson02](http://code.google.com/p/gl33lessons/source/browse/#svn/tags/lesson02)
-  * Скачав архив [lesson02.zip](http://code.google.com/p/gl33lessons/downloads/detail?name=lesson02.zip)
+  * Используя SVN [lesson02](https://github.com/glcoder/gl33lessons/tree/lesson02)
+  * Скачав архив [lesson02.zip](https://github.com/glcoder/gl33lessons/archive/lesson02.zip) [lesson02.tar.gz](https://github.com/glcoder/gl33lessons/archive/lesson02.tar.gz)
