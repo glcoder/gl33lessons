@@ -361,5 +361,5 @@ float shadow  = PCF(Vert.smcoord);
 ## Исходный код и программа ##
 
 Доступ к исходному коду уроку с проектом для MSVC можно получить двумя способами:
-  * Используя SVN [lesson06](http://code.google.com/p/gl33lessons/source/browse/#svn/tags/lesson06)
-  * Скачав архив (включает программу) [lesson06.zip](http://code.google.com/p/gl33lessons/downloads/detail?name=lesson06.zip)
+  * Используя SVN [lesson06](https://github.com/glcoder/gl33lessons/tree/lesson06)
+  * Скачав архив [lesson06.zip](https://github.com/glcoder/gl33lessons/archive/lesson06.zip) [lesson06.tar.gz](https://github.com/glcoder/gl33lessons/archive/lesson06.tar.gz)
